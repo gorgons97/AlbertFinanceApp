@@ -3,7 +3,7 @@ version: '3.8'
 services:
   db:
     image: postgres:15
-    container_name: my_fin_app_db
+    container_name: albert_db
     environment:
       POSTGRES_USER: albert
       POSTGRES_PASSWORD: AlbertPig2025!
@@ -13,6 +13,16 @@ services:
     volumes:
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
       - db_data:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend_python
+    container_name: albert_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend_python:/app
+    depends_on:
+      - db
 
 volumes:
   db_data:
