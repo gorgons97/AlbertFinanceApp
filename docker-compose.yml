@@ -13,6 +13,11 @@ services:
     volumes:
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
       - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U albert -d albert_app"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   backend:
     build: ./backend_python
@@ -23,6 +28,18 @@ services:
       - ./backend_python:/app
     depends_on:
       - db
+
+  frontend:
+    build: ./frontend
+    container_name: albert_frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules # Evita che node_modules venga sovrascritto
+    depends_on:
+      - backend
+    
 
 volumes:
   db_data:

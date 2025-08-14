@@ -1,5 +1,7 @@
 -- Crea il database se non esiste
 CREATE DATABASE albert_app;
+CREATE USER "albert" WITH PASSWORD 'AlbertPig2025!';
+GRANT ALL PRIVILEGES ON DATABASE albert_app TO "albert";
 
 -- Connettiti al database per creare le tabelle
 \c albert_app;
