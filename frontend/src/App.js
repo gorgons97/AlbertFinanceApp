@@ -1,54 +1,32 @@
-import React, { useState } from 'react';
+// INSTALLAZIONE: npm install react-router-dom
+
+// App.js con React Router
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import Login from './components/auth/Login';
 import Registrazione from './components/auth/Registrazione';
-import Login from './components/auth/Login'; 
+//import Dashboard from './components/Dashboard'; // Componente futuro
 import './App.css';
 
 function App() {
-  const [showLogin, setShowLogin] = useState(true);
-
   return (
-    <div className="App">
-      {showLogin ? (
-        // Mostra solo il nuovo Login component con design moderno
-        <Login />
-      ) : (
-        // Versione di test con entrambi i componenti affiancati
-        <div className="test-container">
-          <header className="App-header">
-            <h1>Test Frontend - Backend</h1>
-            <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
-              <div>
-                <h2>Registrazione</h2>
-                <Registrazione />
-              </div>
-              <div>
-                <h2>Login Migliorato</h2>
-                <Login />
-              </div>
-            </div>
-          </header>
-        </div>
-      )}
+    <Router>
+      <div className="App">
+        <Routes>
+          {/* Route per Login */}
+          <Route path="/login" element={<Login />} />
 
-      {/* Toggle per passare tra le modalità */}
-      <button 
-        onClick={() => setShowLogin(!showLogin)}
-        style={{
-          position: 'fixed',
-          top: '20px',
-          right: '20px',
-          padding: '10px 20px',
-          backgroundColor: '#4f46e5',
-          color: 'white',
-          border: 'none',
-          borderRadius: '8px',
-          cursor: 'pointer',
-          zIndex: 1000
-        }}
-      >
-        {showLogin ? 'Modalità Test' : 'Modalità Produzione'}
-      </button>
-    </div>
+          {/* Route per Registrazione */}
+          <Route path="/register" element={<Registrazione />} />
+
+          {/* Redirect automatico alla login se vai alla root */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
+
+          {/* Route 404 - pagina non trovata */}
+          <Route path="*" element={<div>Pagina non trovata</div>} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 

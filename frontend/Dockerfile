@@ -1,5 +1,5 @@
 # Utilizza l'immagine ufficiale Node.js come base
-FROM node:18-alpine
+FROM node:20-alpine
 
 # Imposta la directory di lavoro all'interno del container
 WORKDIR /app
@@ -11,7 +11,7 @@ RUN chmod -R 777 /app
 COPY package*.json ./
 
 # Installa le dipendenze
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 # Copia il resto del codice del frontend
 COPY . .
