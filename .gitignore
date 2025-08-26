@@ -1,0 +1,47 @@
+# Nella root del progetto Albert
+touch .gitignore
+
+# Aggiungi queste righe al .gitignore
+cat >> .gitignore << 'EOF'
+# Node.js
+frontend/node_modules/
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# Package-lock (opzionale, alcuni preferiscono tenerlo)
+# frontend/package-lock.json
+
+# Build files
+frontend/build/
+frontend/dist/
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker
+.docker/
+
+# Logs
+logs/
+*.log
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+EOF
