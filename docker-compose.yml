@@ -15,9 +15,10 @@ services:
       - db_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U albert -d albert_app"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 60s 
 
   backend:
     build: ./backend_python
@@ -27,7 +28,11 @@ services:
     volumes:
       - ./backend_python:/app
     depends_on:
-      - db
+      db:
+        condition: service_healthy  
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://financeuser:financepass@db:5432/financedb
 
   frontend:
     build: ./frontend
@@ -35,10 +40,15 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./frontend:/app
-      - /app/node_modules # Evita che node_modules venga sovrascritto
+      - ./frontend/src:/app/src:ro
+      - ./frontend/public:/app/public:ro
+      #- /app/node_modules  Evita che node_modules venga sovrascritto
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
     depends_on:
       - backend
+    restart: unless-stopped
     
 
 volumes:

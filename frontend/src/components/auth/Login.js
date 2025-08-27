@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 import './Login.css';
 
 const Login = () => {
@@ -268,9 +269,9 @@ const Login = () => {
                                 <span className="checkmark"></span>
                                 Ricordami
                             </label>
-                            <a href="#forgot" className="forgot-password">
+                            <Link to="/forgot" className="forgot-password">
                                 Password dimenticata?
-                            </a>
+                            </Link>
                         </div>
 
                         <button
@@ -303,7 +304,10 @@ const Login = () => {
                     </form>
 
                     <div className="login-footer">
-                        <p>Non hai un account? <a href="#register">Registrati</a></p>
+                        <p>
+                            Non hai un account? 
+                            <Link to="/register">Registrati</Link>
+                        </p>
                     </div>
                 </div>
             </div>

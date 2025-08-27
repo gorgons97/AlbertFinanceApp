@@ -7,6 +7,7 @@ from ..models import Utente
 
 class UserCreate(BaseModel):
     nome: str
+    cognome: str
     email: str
     password: str
 
@@ -25,7 +26,7 @@ def registra_utente(user: UserCreate, db: Session = Depends(get_db)):
     hashed_password = pwd_context.hash(user.password)
     
     # Crea il nuovo utente e salvalo nel DB
-    nuovo_utente = Utente(nome=user.nome, email=user.email, password_hash=hashed_password)
+    nuovo_utente = Utente(nome=user.nome, cognome=user.cognome, email=user.email, password_hash=hashed_password)
     db.add(nuovo_utente)
     db.commit()
     db.refresh(nuovo_utente)

@@ -18,4 +18,4 @@ COPY . .
 RUN chmod +x ./entrypoint.sh
 
 # Usa lo script di entrypoint per avviare il container
-CMD ["./entrypoint.sh"]
+CMD ["/bin/bash", "./entrypoint.sh"]
