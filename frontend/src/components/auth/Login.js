@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Link } from 'react-router-dom';
+import api from '../../api';
+import { Link, useNavigate } from 'react-router-dom';
 import './Login.css';
 
 const Login = () => {
+    const navigate = useNavigate();
     // Stati per gestire i form data
     const [formData, setFormData] = useState({
         email: '',
@@ -130,18 +131,22 @@ const Login = () => {
         setMessage('');
 
         try {
-            const response = await axios.post('http://localhost:8000/api/auth/login', null, {
-                params: {
-                    email: formData.email,
-                    password: formData.password
-                }
+            const response = await api.post('/api/auth/login', {
+                email: formData.email,
+                password: formData.password
             });
-            setMessage(response.data.message || 'Login effettuato con successo!');
+            setMessage('Login effettuato con successo!');
+
+            // Salva il token JWT nel localStorage
+            localStorage.setItem('access_token', response.data.access_token);
 
             // Se remember me è attivo, salva in localStorage
             if (rememberMe) {
                 localStorage.setItem('rememberEmail', formData.email);
             }
+
+            // Redirect alla dashboard
+            setTimeout(() => navigate('/dashboard'), 500);
 
         } catch (error) {
             setMessage(error.response?.data?.detail || 'Errore durante il login');

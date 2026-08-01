@@ -1,0 +1,153 @@
+/* Categorie.css */
+
+.categorie-page {
+  max-width: 600px;
+}
+
+.categorie-page h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--gray-900, #111827);
+  margin: 0 0 1.5rem;
+}
+
+/* Form aggiunta */
+.categorie-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.categorie-input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--gray-200, #e5e7eb);
+  border-radius: var(--radius-md, 0.5rem);
+  font-size: 1rem;
+  background: #ffffff;
+  color: #111827;
+  outline: none;
+  transition: border-color 150ms;
+}
+
+.categorie-input:focus {
+  border-color: var(--primary-color, #4f46e5);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.categorie-add-btn {
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: var(--radius-md, 0.5rem);
+  background: var(--primary-color, #4f46e5);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 150ms;
+}
+
+.categorie-add-btn:hover {
+  background: var(--primary-hover, #4338ca);
+}
+
+.categorie-add-btn svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* Messaggi */
+.categorie-message {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md, 0.5rem);
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.categorie-message.error {
+  background: #fef2f2;
+  color: #ef4444;
+  border: 1px solid #fecaca;
+}
+
+.categorie-message.success {
+  background: #f0fdf4;
+  color: #10b981;
+  border: 1px solid #bbf7d0;
+}
+
+/* Stato vuoto */
+.categorie-empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  background: #fff;
+  border: 2px dashed var(--gray-300, #d1d5db);
+  border-radius: var(--radius-lg, 0.75rem);
+}
+
+.empty-icon { font-size: 2.5rem; }
+.categorie-empty p { color: var(--gray-500, #6b7280); margin: 0.5rem 0; }
+.empty-hint { font-size: 0.85rem; color: var(--gray-400, #9ca3af); }
+
+/* Lista */
+.categorie-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.categorie-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: #fff;
+  border: 1px solid var(--gray-200, #e5e7eb);
+  border-radius: var(--radius-md, 0.5rem);
+  transition: box-shadow 150ms;
+}
+
+.categorie-item:hover {
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.05));
+}
+
+.cat-icon { font-size: 1.25rem; }
+.cat-name { flex: 1; font-size: 1rem; color: var(--gray-200, #1f2937); font-weight: 500; }
+
+.cat-delete-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--gray-400, #9ca3af);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 150ms;
+}
+.cat-delete-btn:hover {
+  background: #fef2f2;
+  color: #ef4444;
+}
+.cat-delete-btn svg { width: 18px; height: 18px; }
+
+.categorie-loading {
+  color: var(--gray-500, #6b7280);
+  font-size: 1rem;
+}
+
+/* Mobile */
+@media (max-width: 767px) {
+  .categorie-page { max-width: 100%; }
+  .categorie-page h2 { font-size: 1.25rem; }
+  .categorie-form { flex-direction: row; }
+}

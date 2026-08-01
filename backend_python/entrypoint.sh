@@ -15,8 +15,8 @@ done
 
 echo "Il database è disponibile! Avvio la creazione delle tabelle..."
 
-# Esegue lo script Python per la creazione delle tabelle
-python -c "from app.database import Base, engine; from app.models import Utente; Base.metadata.create_all(bind=engine)"
+# Esegue lo script Python per la creazione delle tabelle (tutti i modelli)
+python -c "from app.database import Base, engine; from app.models import Utente, Portafoglio, Categoria, Transazione; Base.metadata.create_all(bind=engine)"
 
 echo "Tabelle create. Avvio del server..."
 

@@ -9,7 +9,7 @@ WORKDIR /app
 # Copia i requisiti e installa le dipendenze
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install sqlalchemy-utils passlib[bcrypt]
+RUN pip install sqlalchemy-utils
 
 # Copia tutto il codice dell'applicazione
 COPY . .

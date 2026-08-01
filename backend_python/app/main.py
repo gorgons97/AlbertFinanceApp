@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routes import auth
+from .routes import auth, categorie
 
 ## Importa i moduli necessari per la creazione delle tabelle
 #from .database import Base, engine
@@ -17,21 +17,17 @@ from .routes import auth
 
 app = FastAPI()
 
-# Configura il middleware CORS
-origins = [
-    "http://localhost",
-    "http://localhost:3000",  # L'URL del tuo frontend
-]
-
+# Configura il middleware CORS (development: aperto a tutte le origini)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 app.include_router(auth.router, prefix="/api/auth", tags=["Autenticazione"])
+app.include_router(categorie.router, prefix="/api/categorie", tags=["Categorie"])
 
 @app.get("/")
 def read_root():

@@ -1,11 +1,9 @@
-// INSTALLAZIONE: npm install react-router-dom
-
-// App.js con React Router
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './components/auth/Login';
 import Registrazione from './components/auth/Registrazione';
-//import Dashboard from './components/Dashboard'; // Componente futuro
+import ForgotPassword from './components/auth/ForgotPassword';
+import Dashboard from './components/dashboard/Dashboard';
 import './App.css';
 
 function App() {
@@ -13,16 +11,18 @@ function App() {
     <Router>
       <div className="App">
         <Routes>
-          {/* Route per Login */}
+          {/* Auth routes */}
           <Route path="/login" element={<Login />} />
-
-          {/* Route per Registrazione */}
           <Route path="/register" element={<Registrazione />} />
+          <Route path="/forgot" element={<ForgotPassword />} />
 
-          {/* Redirect automatico alla login se vai alla root */}
+          {/* Dashboard (autoprotetta via controllo token interno) */}
+          <Route path="/dashboard" element={<Dashboard />} />
+
+          {/* Redirect root -> login (la dashboard richiede autenticazione) */}
           <Route path="/" element={<Navigate to="/login" replace />} />
 
-          {/* Route 404 - pagina non trovata */}
+          {/* 404 */}
           <Route path="*" element={<div>Pagina non trovata</div>} />
         </Routes>
       </div>

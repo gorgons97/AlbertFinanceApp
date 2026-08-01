@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import axios from 'axios';
-import { Link } from 'react-router-dom';
+import api from '../../api';
+import { Link, useNavigate } from 'react-router-dom';
 import './Registrazione.css'; // Usa lo stesso CSS modificando i nomi delle classi
 
 
 const Registrazione = () => {
+    const navigate = useNavigate();
     // Stati per gestire i form data - AGGIORNATI con nuovi campi
     const [formData, setFormData] = useState({
         nome: '',
@@ -234,7 +235,7 @@ const Registrazione = () => {
 
         try {
             // CHIAMATA API PER REGISTRAZIONE
-            const response = await axios.post('http://localhost:8000/api/auth/registrazione', {
+            const response = await api.post('/api/auth/registrazione', {
                 nome: formData.nome.trim(),
                 cognome: formData.cognome.trim(),
                 email: formData.email,
@@ -243,10 +244,11 @@ const Registrazione = () => {
 
             setMessage(response.data.message || 'Registrazione completata con successo!');
 
-            // Opzionale: Redirect automatico al login dopo 3 secondi
-            setTimeout(() => {
-                window.location.href = '/login'; // o usa React Router navigate
-            }, 3000);
+            // Salva il token JWT (login automatico dopo registrazione)
+            localStorage.setItem('access_token', response.data.access_token);
+
+            // Redirect alla dashboard dopo 2 secondi
+            setTimeout(() => navigate('/dashboard'), 2000);
 
 
         } catch (error) {            

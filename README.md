@@ -1,10 +1,38 @@
-Il repository contiene tutto,
-quando però si fa un nuovo riallineamento bisogna prestare attenzione per il frontend, perchè vi è un gitignore che non scarica le librerie, quello che si deve fare in questo caso è:
+# Albert — Gestore Spese Familiare
 
-npm install
+Applicazione web per la gestione delle spese familiari con supporto multi-utente
+e portafogli cointestati, completamente containerizzata con Docker.
 
-e
+## Avvio rapido
 
-npm run dev
+```bash
+# 1. Installare dipendenze frontend (solo prima volta)
+cd frontend && npm install && cd ..
 
-nelle cartella del frontend per ricreare il progetto prima del docker-compose
+# 2. Avviare tutti i container
+docker-compose up --build
+```
+
+I servizi saranno disponibili su:
+- **Frontend**: http://localhost:3000
+- **Backend API**: http://localhost:8000
+- **Database**: localhost:5432
+
+## Struttura
+
+```
+Albert/
+├── docker-compose.yml        # Servizi: db, backend, frontend
+├── ARCHITECTURE.md           # Documentazione tecnica completa
+├── backend_python/           # API FastAPI (Python)
+├── frontend/                 # UI React
+└── docker/postgres/          # Schema DDL del database
+```
+
+## Tecnologie
+
+React 19 · FastAPI · PostgreSQL 15 · Docker · SQLAlchemy · JWT
+
+## Documentazione
+
+Per dettagli su architettura, schema DB, API e bug noti, vedi [ARCHITECTURE.md](./ARCHITECTURE.md).
