@@ -15,21 +15,22 @@ class PortafoglioCreate(BaseModel):
 class PortafoglioOut(BaseModel):
     id_portafoglio: int
     nome: str
+    valore: float
 
     class Config:
         orm_mode = True
 
 
-# GET /api/categorie — lista categorie dell'utente
+# GET /api/portafogli — lista portafogli dell'utente
 @router.get("/", response_model=list[PortafoglioOut])
-def lista_categorie(
+def lista_portafogli(
     user: Utente = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return user.categorie
+    return user.portafogli
 
 
-# POST /api/categorie — aggiungi una nuova portafoglio
+# POST /api/portafogli — aggiungi un nuovo portafoglio
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=PortafoglioOut)
 def crea_portafoglio(
     data: PortafoglioCreate,
@@ -40,44 +41,40 @@ def crea_portafoglio(
     if not nome:
         raise HTTPException(status_code=400, detail="Il nome non puo' essere vuoto")
 
-    # Controlla se la portafoglio esiste gia' (globale o dell'utente)
-    for cat in user.categorie:
-        if cat.nome.lower() == nome.lower():
+    # Controlla se il portafoglio esiste gia' per questo utente
+    for pf in user.portafogli:
+        if pf.nome.lower() == nome.lower():
             raise HTTPException(status_code=400, detail="Portafoglio gia' esistente")
 
-    # Cerca se esiste gia' una portafoglio globale con lo stesso nome
-    existing = db.query(Portafoglio).filter(Portafoglio.nome.ilike(nome)).first()
-    if existing:
-        # Associa la portafoglio esistente all'utente
-        user.categorie.append(existing)
-        db.commit()
-        db.refresh(existing)
-        return existing
+    # Arrotonda l'importo a 2 decimali e gestisci valori nulli
+    importo = round(data.importo, 2) if data.importo is not None else 0.0
+    if importo < 0:
+        raise HTTPException(status_code=400, detail="L'importo non puo' essere negativo")
 
-    # Crea nuova portafoglio
-    nuova = Portafoglio(nome=nome)
-    db.add(nuova)
+    # Crea nuovo portafoglio (valore iniziale 0)
+    nuovo = Portafoglio(nome=nome, valore=importo)
+    db.add(nuovo)
     db.flush()  # per ottenere l'id
-    user.categorie.append(nuova)
+    user.portafogli.append(nuovo)
     db.commit()
-    db.refresh(nuova)
-    return nuova
+    db.refresh(nuovo)
+    return nuovo
 
 
-# DELETE /api/categorie/{id} — rimuovi una portafoglio dell'utente
+# DELETE /api/portafogli/{id} — rimuovi un portafoglio dell'utente
 @router.delete("/{portafoglio_id}")
 def rimuovi_portafoglio(
     portafoglio_id: int,
     user: Utente = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    # Cerca la portafoglio tra quelle dell'utente
-    cat = db.query(Portafoglio).filter(Portafoglio.id_portafoglio == portafoglio_id).first()
-    if not cat:
-        raise HTTPException(status_code=404, detail="Portafoglio non trovata")
-    if cat not in user.categorie:
-        raise HTTPException(status_code=403, detail="Portafoglio non associata al tuo account")
+    # Cerca il portafoglio tra quelli dell'utente
+    pf = db.query(Portafoglio).filter(Portafoglio.id_portafoglio == portafoglio_id).first()
+    if not pf:
+        raise HTTPException(status_code=404, detail="Portafoglio non trovato")
+    if pf not in user.portafogli:
+        raise HTTPException(status_code=403, detail="Portafoglio non associato al tuo account")
 
-    user.categorie.remove(cat)
+    user.portafogli.remove(pf)
     db.commit()
-    return {"message": f"Portafoglio '{cat.nome}' rimosso"}
+    return {"message": f"Portafoglio '{pf.nome}' rimosso"}

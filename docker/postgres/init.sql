@@ -20,6 +20,7 @@ CREATE TABLE utenti (
 CREATE TABLE portafogli (
     id_portafoglio SERIAL PRIMARY KEY,
     nome VARCHAR(100) NOT NULL,
+    valore NUMERIC(10, 2) NOT NULL,
     descrizione TEXT
 );
 

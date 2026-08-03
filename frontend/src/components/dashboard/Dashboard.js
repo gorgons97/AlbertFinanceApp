@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Categorie from './Categorie';
+import Portafogli from './Portafogli';
 import './Dashboard.css';
 
 const PAGE_TITLES = {
@@ -56,8 +57,8 @@ const Dashboard = () => {
     const renderPage = () => {
         switch (activePage) {
             case 'categorie':  return <Categorie />;
+            case 'portafogli': return <Portafogli />;
             case 'transazioni': // fallthrough: non ancora implementate
-            case 'portafogli':
             case 'report':
             case 'dashboard':
             default:

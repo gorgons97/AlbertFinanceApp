@@ -41,6 +41,7 @@ class Portafoglio(Base):
 
     id_portafoglio = Column(Integer, primary_key=True, index=True)
     nome           = Column(String(100), nullable=False)
+    valore         = Column(Numeric(10, 2), nullable=False)
     descrizione    = Column(Text)
 
     # Relazioni
