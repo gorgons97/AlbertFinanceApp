@@ -12,6 +12,10 @@ class CategoriaCreate(BaseModel):
     nome: str
 
 
+class CategoriaUpdate(BaseModel):
+    nome: str
+
+
 class CategoriaOut(BaseModel):
     id_categoria: int
     nome: str
@@ -62,6 +66,43 @@ def crea_categoria(
     db.commit()
     db.refresh(nuova)
     return nuova
+
+
+# PUT /api/categorie/{id} — modifica una categoria
+@router.put("/{categoria_id}", response_model=CategoriaOut)
+def modifica_categoria(
+    categoria_id: int,
+    data: CategoriaUpdate,
+    user: Utente = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    cat = db.query(Categoria).filter(Categoria.id_categoria == categoria_id).first()
+    if not cat:
+        raise HTTPException(status_code=404, detail="Categoria non trovata")
+    if cat not in user.categorie:
+        raise HTTPException(status_code=403, detail="Categoria non associata al tuo account")
+
+    nome = data.nome.strip().capitalize()
+    if not nome:
+        raise HTTPException(status_code=400, detail="Il nome non puo' essere vuoto")
+
+    # Controlla duplicati (escludendo se stessa)
+    for c in user.categorie:
+        if c.id_categoria != categoria_id and c.nome.lower() == nome.lower():
+            raise HTTPException(status_code=400, detail="Categoria gia' esistente")
+
+    # Controlla anche tra le categorie globali
+    existing = db.query(Categoria).filter(
+        Categoria.nome.ilike(nome),
+        Categoria.id_categoria != categoria_id
+    ).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Esiste gia' una categoria con questo nome")
+
+    cat.nome = nome
+    db.commit()
+    db.refresh(cat)
+    return cat
 
 
 # DELETE /api/categorie/{id} — rimuovi una categoria dell'utente

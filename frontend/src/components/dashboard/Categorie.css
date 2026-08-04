@@ -28,6 +28,7 @@
   color: #111827;
   outline: none;
   transition: border-color 150ms;
+  font-family: inherit;
 }
 
 .categorie-input:focus {
@@ -118,15 +119,16 @@
 }
 
 .cat-icon { font-size: 1.25rem; }
-.cat-name { flex: 1; font-size: 1rem; color: var(--gray-200, #1f2937); font-weight: 500; }
+.cat-name { flex: 1; font-size: 1rem; color: #1f2937; font-weight: 500; }
 
+/* Pulsanti azione */
+.cat-edit-btn,
 .cat-delete-btn {
   width: 32px;
   height: 32px;
   border: none;
   border-radius: 50%;
   background: transparent;
-  color: var(--gray-400, #9ca3af);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -134,11 +136,80 @@
   flex-shrink: 0;
   transition: all 150ms;
 }
+
+.cat-edit-btn {
+  color: var(--gray-400, #9ca3af);
+}
+.cat-edit-btn:hover {
+  background: #eff6ff;
+  color: #3b82f6;
+}
+
+.cat-delete-btn {
+  color: var(--gray-400, #9ca3af);
+}
 .cat-delete-btn:hover {
   background: #fef2f2;
   color: #ef4444;
 }
-.cat-delete-btn svg { width: 18px; height: 18px; }
+
+.cat-edit-btn svg,
+.cat-delete-btn svg { width: 16px; height: 16px; }
+
+/* Modifica inline */
+.categorie-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.categorie-edit-input {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--primary-color, #4f46e5);
+  border-radius: var(--radius-sm, 0.375rem);
+  font-size: 0.95rem;
+  background: #fff;
+  color: #111827;
+  outline: none;
+  font-family: inherit;
+}
+
+.categorie-edit-save,
+.categorie-edit-cancel {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 150ms;
+}
+
+.categorie-edit-save {
+  background: #dcfce7;
+  color: #16a34a;
+}
+.categorie-edit-save:hover {
+  background: #bbf7d0;
+}
+
+.categorie-edit-cancel {
+  background: #fee2e2;
+  color: #ef4444;
+}
+.categorie-edit-cancel:hover {
+  background: #fecaca;
+}
+
+.categorie-edit-save svg,
+.categorie-edit-cancel svg {
+  width: 16px;
+  height: 16px;
+}
 
 .categorie-loading {
   color: var(--gray-500, #6b7280);
@@ -150,4 +221,15 @@
   .categorie-page { max-width: 100%; }
   .categorie-page h2 { font-size: 1.25rem; }
   .categorie-form { flex-direction: row; }
+
+  .categorie-item { padding: 0.85rem 1rem; }
+  .cat-name { font-size: 0.95rem; }
+
+  .cat-edit-btn,
+  .cat-delete-btn {
+    width: 36px;
+    height: 36px;
+  }
+  .cat-edit-btn svg,
+  .cat-delete-btn svg { width: 18px; height: 18px; }
 }

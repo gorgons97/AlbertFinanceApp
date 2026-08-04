@@ -42,7 +42,7 @@ class Portafoglio(Base):
     id_portafoglio = Column(Integer, primary_key=True, index=True)
     nome           = Column(String(100), nullable=False)
     valore         = Column(Numeric(10, 2), nullable=False)
-    descrizione    = Column(Text)
+    tipo           = Column(String(50), nullable=False, default='conti')
 
     # Relazioni
     utenti      = relationship("Utente", secondary=utenti_portafogli, back_populates="portafogli")

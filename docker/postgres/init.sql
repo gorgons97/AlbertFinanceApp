@@ -21,7 +21,7 @@ CREATE TABLE portafogli (
     id_portafoglio SERIAL PRIMARY KEY,
     nome VARCHAR(100) NOT NULL,
     valore NUMERIC(10, 2) NOT NULL,
-    descrizione TEXT
+    tipo VARCHAR(50) NOT NULL DEFAULT 'conti'
 );
 
 -- Tabella di collegamento Utente <-> Portafoglio

@@ -33,7 +33,8 @@ utenti
 portafogli
   id_portafoglio   SERIAL PK
   nome             VARCHAR(100)
-  descrizione      TEXT
+  valore           NUMERIC(10,2)
+  tipo             VARCHAR(50) NOT NULL DEFAULT 'conti'
 
 utenti_portafogli      (tabella di join N:N)
   id_utente        INT FK -> utenti
@@ -131,20 +132,25 @@ Albert/
 
 ## API endpoints (attuali)
 
-| Method | Path                     | Descrizione                  | Auth |
-|--------|--------------------------|------------------------------|------|
-| GET    | /                        | Health check backend          | No   |
-| POST   | /api/auth/registrazione  | Crea nuovo utente             | No   |
-| POST   | /api/auth/login          | Login (email+password in query)| No   |
+| Method | Path                     | Descrizione                         | Auth |
+|--------|--------------------------|-------------------------------------|------|
+| GET    | /                        | Health check backend                | No   |
+| POST   | /api/auth/registrazione  | Crea nuovo utente (+ JWT auto)      | No   |
+| POST   | /api/auth/login          | Login (restituisce JWT)             | No   |
+| POST   | /api/auth/reset-password | Reset password locale               | No   |
+| GET    | /api/categorie/          | Lista categorie utente              | JWT  |
+| POST   | /api/categorie/          | Crea/associa categoria              | JWT  |
+| PUT    | /api/categorie/{id}      | Modifica nome categoria             | JWT  |
+| DELETE | /api/categorie/{id}      | Rimuovi categoria                   | JWT  |
+| GET    | /api/portafogli/         | Lista portafogli utente             | JWT  |
+| POST   | /api/portafogli/         | Crea portafoglio (nome, valore, tipo) | JWT  |
+| PUT    | /api/portafogli/{id}     | Modifica portafoglio                | JWT  |
+| DELETE | /api/portafogli/{id}     | Rimuovi portafoglio                 | JWT  |
 
 ### Da implementare
 
-- [ ] `POST /api/auth/login` -> restituire JWT invece del solo messaggio
-- [ ] CRUD `/api/portafogli` — gestione portafogli
-- [ ] CRUD `/api/categorie` — gestione categorie personali
 - [ ] CRUD `/api/transazioni` — gestione spese
 - [ ] `GET  /api/report` — report/bilanci
-- [ ] Dashboard frontend dopo login
 
 ---
 
@@ -154,11 +160,9 @@ Albert/
    ma `database.py` ha `postgresql://financeuser:***@db:5432/financedb`.
    → Allineare a `albert`/`albert_app`.
 
-2. **Modelli SQLAlchemy incompleti**: `models.py` ha solo `Utente`.
-   Mancano `Portafoglio`, `Categoria`, `Transazione`, `UtentePortafoglio`, `UtenteCategoria`.
+2. **Modelli SQLAlchemy**: ora includono `Utente`, `Portafoglio`, `Categoria`, `Transazione`, `UtentePortafoglio`, `UtenteCategoria`. ✅
 
-3. **Login senza JWT**: la route `/login` non genera token, restituisce solo
-   `{"message": "...", "utente_id": ...}`. Serve `python-jose` (gia' in requirements).
+3. **JWT implementato**: login e registrazione restituiscono token JWT. ✅
 
 4. **entrypoint.sh duplicato**: ce n'e' uno nella root del progetto (non referenziato
    da docker-compose) e uno corretto in `backend_python/`. Rimuovere quello in root.
