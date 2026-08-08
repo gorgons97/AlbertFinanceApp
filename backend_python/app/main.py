@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routes import auth, categorie, portafogli
+from .routes import auth, categorie, portafogli, transazioni
 
 ## Importa i moduli necessari per la creazione delle tabelle
 #from .database import Base, engine
@@ -29,6 +29,7 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api/auth", tags=["Autenticazione"])
 app.include_router(categorie.router, prefix="/api/categorie", tags=["Categorie"])
 app.include_router(portafogli.router, prefix="/api/portafogli", tags=["Portafogli"])
+app.include_router(transazioni.router, prefix="/api/transazioni", tags=["Transazioni"])
 
 @app.get("/")
 def read_root():

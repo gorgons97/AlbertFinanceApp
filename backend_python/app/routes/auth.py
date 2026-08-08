@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from ..database import get_db
-from ..models import Utente
+from ..models import Utente, Portafoglio
 
 # Configurazione JWT
 SECRET_KEY = "chiave-segreta-temporanea-da-spostare-in-env"
@@ -61,6 +61,13 @@ def registra_utente(user: UserCreate, db: Session = Depends(get_db)):
     db.add(nuovo_utente)
     db.commit()
     db.refresh(nuovo_utente)
+
+    # Crea il portafoglio "Generale" automaticamente
+    portafoglio_generale = Portafoglio(nome="Generale", valore=0, tipo=1)
+    db.add(portafoglio_generale)
+    db.flush()
+    nuovo_utente.portafogli.append(portafoglio_generale)
+    db.commit()
 
     # Genera token JWT e lo restituisce subito (login automatico)
     token = create_access_token(data={"sub": str(nuovo_utente.id_utente)})

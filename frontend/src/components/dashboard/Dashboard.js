@@ -1,17 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../api';
 import Sidebar from './Sidebar';
 import Categorie from './Categorie';
 import Portafogli from './Portafogli';
+import Transazioni from './Transazioni';
 import './Dashboard.css';
 
 const PAGE_TITLES = {
-    dashboard: 'Dashboard',
-    transazioni: 'Transazioni',
-    portafogli: 'Portafogli',
-    categorie: 'Categorie',
-    report: 'Report',
+    dashboard: 'Dashboard', transazioni: 'Transazioni',
+    portafogli: 'Portafogli', categorie: 'Categorie', report: 'Report',
 };
+
+const TIPI_ICONE = { spesa: '💸', guadagno: '💰', trasferimento: '🔄' };
 
 const Dashboard = () => {
     const navigate = useNavigate();
@@ -19,20 +20,14 @@ const Dashboard = () => {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [activePage, setActivePage] = useState('dashboard');
 
-    // Controllo autenticazione
     useEffect(() => {
-        if (!localStorage.getItem('access_token')) {
-            navigate('/login', { replace: true });
-        }
+        if (!localStorage.getItem('access_token')) navigate('/login', { replace: true });
     }, [navigate]);
 
-    // Adatta sidebar a resize
     useEffect(() => {
-        const handleResize = () => {
-            if (window.innerWidth < 768) setSidebarCollapsed(true);
-        };
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
+        const h = () => { if (window.innerWidth < 768) setSidebarCollapsed(true); };
+        window.addEventListener('resize', h);
+        return () => window.removeEventListener('resize', h);
     }, []);
 
     const handleMenuClick = (id) => {
@@ -47,37 +42,26 @@ const Dashboard = () => {
     };
 
     const toggleSidebar = () => {
-        if (window.innerWidth < 768) {
-            setMobileOpen(!mobileOpen);
-        } else {
-            setSidebarCollapsed(!sidebarCollapsed);
-        }
+        if (window.innerWidth < 768) setMobileOpen(!mobileOpen);
+        else setSidebarCollapsed(!sidebarCollapsed);
     };
 
     const renderPage = () => {
         switch (activePage) {
             case 'categorie':  return <Categorie />;
             case 'portafogli': return <Portafogli />;
-            case 'transazioni': // fallthrough: non ancora implementate
-            case 'report':
+            case 'transazioni': return <Transazioni />;
             case 'dashboard':
-            default:
-                return <DashboardHome />;
+            default: return <DashboardHome />;
         }
     };
 
     return (
         <div className="dashboard-layout">
-            <Sidebar
-                collapsed={sidebarCollapsed}
-                onToggle={toggleSidebar}
-                onMenuClick={handleMenuClick}
-                onLogout={handleLogout}
-                mobileOpen={mobileOpen}
-                onMobileClose={() => setMobileOpen(false)}
-                activePage={activePage}
-            />
-
+            <Sidebar collapsed={sidebarCollapsed} onToggle={toggleSidebar}
+                onMenuClick={handleMenuClick} onLogout={handleLogout}
+                mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)}
+                activePage={activePage} />
             <main className={`dashboard-main ${sidebarCollapsed && !mobileOpen ? 'expanded' : ''}`}>
                 <header className="dashboard-header">
                     <div className="header-left">
@@ -91,55 +75,177 @@ const Dashboard = () => {
                         <h2>{PAGE_TITLES[activePage] || 'Dashboard'}</h2>
                     </div>
                     <span className="dashboard-month">
-                        {new Date().toLocaleString('it-IT', { month: 'long', year: 'numeric' })
-                            .replace(/^\w/, c => c.toUpperCase())}
+                        {new Date().toLocaleString('it-IT', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase())}
                     </span>
                 </header>
-
-                <div className="dashboard-content">
-                    {renderPage()}
-                </div>
+                <div className="dashboard-content">{renderPage()}</div>
             </main>
 
-            {/* FAB visibile solo su Dashboard e Transazioni */}
-            {(activePage === 'dashboard' || activePage === 'transazioni') && (
-                <button className="fab" onClick={() => alert('hai premuto il pulsante Nuova Transazione')} title="Nuova Transazione">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <path d="M12 5v14M5 12h14"/>
-                    </svg>
-                </button>
-            )}
+            {/* FAB solo su Dashboard, apre il modale di aggiunta rapida */}
+            {activePage === 'dashboard' && <QuickAddFAB />}
         </div>
     );
 };
 
-/* Componente Home Dashboard (quella originale) */
+/* ── Quick Add FAB + Modal ── */
+const QuickAddFAB = () => {
+    const [open, setOpen] = useState(false);
+    const [portafogli, setPortafogli] = useState([]);
+    const [categorie, setCategorie] = useState([]);
+    const [tipo, setTipo] = useState('spesa');
+    const [pfId, setPfId] = useState('');
+    const [catId, setCatId] = useState('');
+    const [importo, setImporto] = useState('');
+    const [desc, setDesc] = useState('');
+    const [msg, setMsg] = useState('');
+
+    const apri = async () => {
+        try {
+            const [rpf, rcat] = await Promise.all([
+                api.get('/api/portafogli/'),
+                api.get('/api/categorie/'),
+            ]);
+            setPortafogli(rpf.data);
+            setCategorie(rcat.data);
+            if (rpf.data.length > 0) setPfId(String(rpf.data[0].id_portafoglio));
+            const catF = rcat.data.filter(c => c.tipo === 'spesa');
+            if (catF.length > 0) setCatId(String(catF[0].id_categoria));
+            setOpen(true);
+        } catch { setMsg('Errore caricamento dati'); }
+    };
+
+    const chiudi = () => { setOpen(false); setMsg(''); setImporto(''); setDesc(''); };
+
+    const invia = async (e) => {
+        e.preventDefault();
+        if (!pfId || !catId || !importo) return;
+        try {
+            await api.post('/api/transazioni/', {
+                id_portafoglio: parseInt(pfId), id_categoria: parseInt(catId),
+                tipo, importo: parseFloat(importo), descrizione: desc.trim(),
+            });
+            chiudi();
+            window.location.reload(); // refresh dashboard
+        } catch (err) {
+            setMsg(err.response?.data?.detail || 'Errore');
+        }
+    };
+
+    const catFiltrate = categorie.filter(c => c.tipo === tipo);
+
+    return (
+        <>
+            <button className="fab" onClick={apri} title="Nuova Transazione">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M12 5v14M5 12h14"/>
+                </svg>
+            </button>
+            {open && (
+                <div className="modal-overlay" onClick={chiudi}>
+                    <div className="quickadd-modal" onClick={e => e.stopPropagation()}>
+                        <h3>Nuova Transazione</h3>
+                        <form onSubmit={invia} className="quickadd-form">
+                            <div className="quickadd-tabs">
+                                {['spesa','guadagno'].map(t => (
+                                    <button key={t} type="button"
+                                        className={`quickadd-tab ${tipo===t?'active':''}`}
+                                        onClick={() => { setTipo(t); const cf=categorie.filter(c=>c.tipo===t); if(cf.length)setCatId(String(cf[0].id_categoria)); }}>
+                                        {TIPI_ICONE[t]} {t==='spesa'?'Spesa':'Guadagno'}
+                                    </button>
+                                ))}
+                            </div>
+                            <select value={pfId} onChange={e => setPfId(e.target.value)} required>
+                                {portafogli.map(p => <option key={p.id_portafoglio} value={p.id_portafoglio}>{p.nome}</option>)}
+                            </select>
+                            <select value={catId} onChange={e => setCatId(e.target.value)} required>
+                                {catFiltrate.map(c => <option key={c.id_categoria} value={c.id_categoria}>{c.nome}</option>)}
+                            </select>
+                            <input type="number" placeholder="Importo" value={importo}
+                                onChange={e => setImporto(e.target.value)} step="0.01" min="0.01" required />
+                            <input type="text" placeholder="Descrizione (opzionale)" value={desc}
+                                onChange={e => setDesc(e.target.value)} maxLength={200} />
+                            <div className="quickadd-actions">
+                                <button type="button" className="modal-btn modal-btn-cancel" onClick={chiudi}>Annulla</button>
+                                <button type="submit" className="modal-btn modal-btn-primary">Aggiungi</button>
+                            </div>
+                            {msg && <p className="quickadd-msg">{msg}</p>}
+                        </form>
+                    </div>
+                </div>
+            )}
+        </>
+    );
+};
+
+/* ── Dashboard Home ── */
 const DashboardHome = () => {
-    const mese = new Date().toLocaleString('it-IT', { month: 'long', year: 'numeric' })
-        .replace(/^\w/, c => c.toUpperCase());
+    const [saldo, setSaldo] = useState(null);
+    const [transazioni, setTransazioni] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    const meseCorrente = new Date().toISOString().slice(0, 7); // "YYYY-MM"
+
+    const carica = useCallback(async () => {
+        try {
+            const [rSaldo, rTrans] = await Promise.all([
+                api.get('/api/portafogli/saldo'),
+                api.get(`/api/transazioni/?mese=${meseCorrente}&limit=200`),
+            ]);
+            setSaldo(rSaldo.data.saldo);
+            setTransazioni(rTrans.data);
+        } catch {} finally { setLoading(false); }
+    }, [meseCorrente]);
+
+    useEffect(() => { carica(); }, [carica]);
+
+    const spese = transazioni.filter(t => t.tipo === 'spesa').reduce((a,t) => a + t.importo, 0);
+    const entrate = transazioni.filter(t => t.tipo === 'guadagno').reduce((a,t) => a + t.importo, 0);
+
+    const meseLabel = new Date().toLocaleString('it-IT', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase());
+
+    if (loading) return <p className="dash-loading">Caricamento...</p>;
+
     return (
         <>
             <div className="summary-cards">
                 <div className="summary-card">
                     <span className="summary-label">Spese del mese</span>
-                    <span className="summary-value">-- €</span>
+                    <span className="summary-value expense">{spese.toFixed(2)} €</span>
                 </div>
                 <div className="summary-card">
                     <span className="summary-label">Entrate del mese</span>
-                    <span className="summary-value">-- €</span>
+                    <span className="summary-value income">{entrate.toFixed(2)} €</span>
                 </div>
-                <div className="summary-card">
+                <div className="summary-card saldo-card">
                     <span className="summary-label">Saldo</span>
-                    <span className="summary-value">-- €</span>
+                    <span className={`summary-value ${(saldo||0) >= 0 ? 'income' : 'expense'}`}>
+                        {saldo !== null ? saldo.toFixed(2) : '--'} €
+                    </span>
                 </div>
             </div>
-            <div className="dashboard-placeholder">
-                <div className="placeholder-icon">📊</div>
-                <p>Le transazioni di {mese} appariranno qui.</p>
-                <p className="placeholder-hint">
-                    Usa il pulsante <strong>+</strong> in basso a destra per aggiungere una nuova spesa.
-                </p>
-            </div>
+
+            {transazioni.length === 0 ? (
+                <div className="dashboard-placeholder">
+                    <div className="placeholder-icon">📊</div>
+                    <p>Nessuna transazione a {meseLabel}.</p>
+                    <p className="placeholder-hint">Usa il pulsante <strong>+</strong> per aggiungerne una.</p>
+                </div>
+            ) : (
+                <ul className="transazioni-list dash-trans-list">
+                    {transazioni.map(t => (
+                        <li key={t.id_transazione} className="transazioni-item">
+                            <span className="tr-icon">{TIPI_ICONE[t.tipo] || '💳'}</span>
+                            <div className="tr-info">
+                                <span className="tr-desc">{t.descrizione || (t.tipo==='spesa'?'Spesa':'Guadagno')}</span>
+                                <span className="tr-meta">{t.nome_portafoglio} · {t.nome_categoria}</span>
+                            </div>
+                            <span className={`tr-importo ${t.tipo==='guadagno'?'tr-importo-positivo':'tr-importo-negativo'}`}>
+                                {t.tipo==='guadagno'?'+':'-'}{parseFloat(t.importo).toFixed(2)} €
+                            </span>
+                        </li>
+                    ))}
+                </ul>
+            )}
         </>
     );
 };

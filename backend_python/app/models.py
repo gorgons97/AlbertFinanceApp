@@ -1,7 +1,25 @@
-from sqlalchemy import Column, Integer, String, DateTime, Numeric, Date, Time, Boolean, Text, ForeignKey, Table
+from sqlalchemy import Column, Integer, SmallInteger, String, DateTime, Numeric, Date, Time, Boolean, Text, ForeignKey, Table
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from .database import Base
+
+# ── Mapping tipo portafoglio ──
+# 1=generale  2=contanti  3=conti  4=carta di credito  5=risparmi
+TIPO_PORTAFOGLIO = {
+    1: 'generale', 2: 'contanti', 3: 'conti',
+    4: 'carta di credito', 5: 'risparmi',
+}
+TIPO_PORTAFOGLIO_REV = {v: k for k, v in TIPO_PORTAFOGLIO.items()}
+
+# ── Mapping tipo transazione ──
+# 1=spesa  2=guadagno  3=trasferimento
+TIPO_TRANSAZIONE = {1: 'spesa', 2: 'guadagno', 3: 'trasferimento'}
+TIPO_TRANSAZIONE_REV = {v: k for k, v in TIPO_TRANSAZIONE.items()}
+
+# ── Mapping tipo categoria ──
+# 1=spesa  2=guadagno  3=trasferimento
+TIPO_CATEGORIA = {1: 'spesa', 2: 'guadagno', 3: 'trasferimento'}
+TIPO_CATEGORIA_REV = {v: k for k, v in TIPO_CATEGORIA.items()}
 
 # Tabella di join N:N tra Utente e Portafoglio
 utenti_portafogli = Table(
@@ -42,7 +60,7 @@ class Portafoglio(Base):
     id_portafoglio = Column(Integer, primary_key=True, index=True)
     nome           = Column(String(100), nullable=False)
     valore         = Column(Numeric(10, 2), nullable=False)
-    tipo           = Column(String(50), nullable=False, default='conti')
+    tipo           = Column(SmallInteger, nullable=False, default=3)
 
     # Relazioni
     utenti      = relationship("Utente", secondary=utenti_portafogli, back_populates="portafogli")
@@ -54,6 +72,7 @@ class Categoria(Base):
 
     id_categoria = Column(Integer, primary_key=True, index=True)
     nome         = Column(String(100), unique=True, nullable=False)
+    tipo         = Column(SmallInteger, nullable=False, default=1)  # 1=spesa, 2=guadagno, 3=trasferimento
 
     # Relazioni
     utenti      = relationship("Utente", secondary=utenti_categorie, back_populates="categorie")
@@ -63,17 +82,23 @@ class Categoria(Base):
 class Transazione(Base):
     __tablename__ = "transazioni"
 
-    id_transazione  = Column(Integer, primary_key=True, index=True)
-    id_utente       = Column(Integer, ForeignKey("utenti.id_utente", ondelete="CASCADE"), nullable=False)
-    id_portafoglio  = Column(Integer, ForeignKey("portafogli.id_portafoglio", ondelete="CASCADE"), nullable=False)
-    id_categoria    = Column(Integer, ForeignKey("categorie.id_categoria", ondelete="RESTRICT"), nullable=False)
-    valore          = Column(Numeric(10, 2), nullable=False)
+    id_transazione   = Column(Integer, primary_key=True, index=True)
+    id_utente        = Column(Integer, ForeignKey("utenti.id_utente", ondelete="CASCADE"), nullable=False)
+    id_portafoglio   = Column(Integer, ForeignKey("portafogli.id_portafoglio", ondelete="CASCADE"), nullable=False)
+    id_categoria     = Column(Integer, ForeignKey("categorie.id_categoria", ondelete="RESTRICT"), nullable=False)
+    tipo             = Column(SmallInteger, nullable=False, default=1)  # 1=spesa, 2=guadagno, 3=trasferimento
+    importo          = Column(Numeric(10, 2), nullable=False)
+    descrizione      = Column(Text)
     data_transazione = Column(Date, default=func.current_date())
     ora_transazione  = Column(Time, default=func.current_time())
-    nascosto        = Column(Boolean, default=False)
-    link_allegato   = Column(Text)
+    nascosto         = Column(Boolean, default=False)
+    link_allegato    = Column(Text)
+    # Per trasferimenti: link alla transazione collegata
+    id_transazione_collegata = Column(Integer, ForeignKey("transazioni.id_transazione", ondelete="SET NULL"), nullable=True)
 
     # Relazioni
     utente      = relationship("Utente", back_populates="transazioni")
     portafoglio = relationship("Portafoglio", back_populates="transazioni")
     categoria   = relationship("Categoria", back_populates="transazioni")
+    # Transazione collegata (per trasferimenti)
+    collegata   = relationship("Transazione", remote_side=[id_transazione], post_update=True)

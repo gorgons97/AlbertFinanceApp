@@ -3,18 +3,22 @@ import api from '../../api';
 import ConfirmModal from './ConfirmModal';
 import './Categorie.css';
 
+const TIPI_ICONE = { spesa: '💸', guadagno: '💰', trasferimento: '🔄' };
+const TIPI_LABELS = { spesa: 'Spesa', guadagno: 'Guadagno', trasferimento: 'Trasferimento' };
+const TIPI_LIST = ['spesa', 'guadagno', 'trasferimento'];
+
 const Categorie = () => {
     const [categorie, setCategorie] = useState([]);
     const [nuova, setNuova] = useState('');
+    const [tipoCat, setTipoCat] = useState('spesa');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
-    // Edit state
     const [editingId, setEditingId] = useState(null);
     const [editNome, setEditNome] = useState('');
+    const [editTipo, setEditTipo] = useState('spesa');
 
-    // Delete confirmation
     const [deleteTarget, setDeleteTarget] = useState(null);
 
     useEffect(() => { caricaCategorie(); }, []);
@@ -36,9 +40,10 @@ const Categorie = () => {
         if (!nuova.trim()) return;
         try {
             setError('');
-            const res = await api.post('/api/categorie/', { nome: nuova.trim() });
+            const res = await api.post('/api/categorie/', { nome: nuova.trim(), tipo: tipoCat });
             setCategorie([...categorie, res.data]);
             setNuova('');
+            setTipoCat('spesa');
             setSuccess(`"${res.data.nome}" aggiunta!`);
             setTimeout(() => setSuccess(''), 2500);
         } catch (err) {
@@ -49,22 +54,17 @@ const Categorie = () => {
     const iniziaModifica = (cat) => {
         setEditingId(cat.id_categoria);
         setEditNome(cat.nome);
+        setEditTipo(cat.tipo || 'spesa');
     };
 
-    const annullaModifica = () => {
-        setEditingId(null);
-    };
+    const annullaModifica = () => setEditingId(null);
 
     const salvaModifica = async (catId) => {
         if (!editNome.trim()) return;
         try {
             setError('');
-            const res = await api.put(`/api/categorie/${catId}`, {
-                nome: editNome.trim(),
-            });
-            setCategorie(categorie.map(c =>
-                c.id_categoria === catId ? res.data : c
-            ));
+            const res = await api.put(`/api/categorie/${catId}`, { nome: editNome.trim(), tipo: editTipo });
+            setCategorie(categorie.map(c => c.id_categoria === catId ? res.data : c));
             setEditingId(null);
             setSuccess(`"${res.data.nome}" aggiornata!`);
             setTimeout(() => setSuccess(''), 2500);
@@ -73,9 +73,7 @@ const Categorie = () => {
         }
     };
 
-    const confermaElimina = (cat) => {
-        setDeleteTarget(cat);
-    };
+    const confermaElimina = (cat) => setDeleteTarget(cat);
 
     const eseguiElimina = async () => {
         if (!deleteTarget) return;
@@ -101,14 +99,14 @@ const Categorie = () => {
             <h2>Le tue Categorie</h2>
 
             <form onSubmit={aggiungiCategoria} className="categorie-form">
-                <input
-                    type="text"
-                    className="categorie-input"
-                    placeholder="Nuova categoria..."
-                    value={nuova}
-                    onChange={e => setNuova(e.target.value)}
-                    maxLength={50}
-                />
+                <input type="text" className="categorie-input" placeholder="Nuova categoria..."
+                    value={nuova} onChange={e => setNuova(e.target.value)} maxLength={50} />
+                <select className="categorie-input categorie-input-tipo"
+                    value={tipoCat} onChange={e => setTipoCat(e.target.value)}>
+                    {TIPI_LIST.map(t => (
+                        <option key={t} value={t}>{TIPI_ICONE[t]} {TIPI_LABELS[t]}</option>
+                    ))}
+                </select>
                 <button type="submit" className="categorie-add-btn" title="Aggiungi categoria">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <path d="M12 5v14M5 12h14"/>
@@ -130,55 +128,42 @@ const Categorie = () => {
                     {categorie.map(cat => (
                         <li key={cat.id_categoria} className="categorie-item">
                             {editingId === cat.id_categoria ? (
-                                /* ---- Modalità modifica inline ---- */
                                 <div className="categorie-edit-row">
-                                    <input
-                                        type="text"
-                                        className="categorie-edit-input"
-                                        value={editNome}
-                                        onChange={e => setEditNome(e.target.value)}
-                                        maxLength={50}
-                                        autoFocus
-                                    />
-                                    <button
-                                        className="categorie-edit-save"
-                                        onClick={() => salvaModifica(cat.id_categoria)}
-                                        title="Salva"
-                                    >
+                                    <input type="text" className="categorie-edit-input"
+                                        value={editNome} onChange={e => setEditNome(e.target.value)}
+                                        maxLength={50} autoFocus />
+                                    <select className="categorie-edit-input categorie-edit-tipo"
+                                        value={editTipo} onChange={e => setEditTipo(e.target.value)}>
+                                        {TIPI_LIST.map(t => (
+                                            <option key={t} value={t}>{TIPI_ICONE[t]} {TIPI_LABELS[t]}</option>
+                                        ))}
+                                    </select>
+                                    <button className="categorie-edit-save"
+                                        onClick={() => salvaModifica(cat.id_categoria)} title="Salva">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                             <path d="M5 13l4 4L19 7"/>
                                         </svg>
                                     </button>
-                                    <button
-                                        className="categorie-edit-cancel"
-                                        onClick={annullaModifica}
-                                        title="Annulla"
-                                    >
+                                    <button className="categorie-edit-cancel" onClick={annullaModifica} title="Annulla">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                             <path d="M18 6L6 18M6 6l12 12"/>
                                         </svg>
                                     </button>
                                 </div>
                             ) : (
-                                /* ---- Modalità visualizzazione ---- */
                                 <>
-                                    <span className="cat-icon">🏷️</span>
+                                    <span className="cat-icon">{TIPI_ICONE[cat.tipo] || '🏷️'}</span>
                                     <span className="cat-name">{cat.nome}</span>
-                                    <button
-                                        className="cat-edit-btn"
-                                        onClick={() => iniziaModifica(cat)}
-                                        title={`Modifica ${cat.nome}`}
-                                    >
+                                    <span className="cat-tipo-label-badge">{TIPI_LABELS[cat.tipo] || cat.tipo}</span>
+                                    <button className="cat-edit-btn"
+                                        onClick={() => iniziaModifica(cat)} title={`Modifica ${cat.nome}`}>
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                                         </svg>
                                     </button>
-                                    <button
-                                        className="cat-delete-btn"
-                                        onClick={() => confermaElimina(cat)}
-                                        title={`Elimina ${cat.nome}`}
-                                    >
+                                    <button className="cat-delete-btn"
+                                        onClick={() => confermaElimina(cat)} title={`Elimina ${cat.nome}`}>
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                             <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                                         </svg>
@@ -190,14 +175,9 @@ const Categorie = () => {
                 </ul>
             )}
 
-            {/* Modal di conferma eliminazione */}
-            <ConfirmModal
-                isOpen={!!deleteTarget}
-                title="Elimina categoria"
+            <ConfirmModal isOpen={!!deleteTarget} title="Elimina categoria"
                 message={`Sei sicuro di voler eliminare "${deleteTarget?.nome}"? Questa azione non può essere annullata.`}
-                onConfirm={eseguiElimina}
-                onCancel={() => setDeleteTarget(null)}
-            />
+                onConfirm={eseguiElimina} onCancel={() => setDeleteTarget(null)} />
         </div>
     );
 };
