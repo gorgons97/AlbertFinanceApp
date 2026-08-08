@@ -3,9 +3,7 @@
 ## Panoramica
 
 Albert e' un gestore spese familiare multi-utente containerizzato con Docker.
-Permette a piu' persone di tracciare le proprie spese su portafogli personali
-e cointestati. Una spesa su un portafoglio cointestato viene riflessa su tutti
-i portafogli dei cointestatari.
+Permette a piu' persone di tracciare le proprie spese su portafogli personali.
 
 ## Stack tecnologico
 
@@ -14,7 +12,7 @@ i portafogli dei cointestatari.
 | Frontend   | React 19, React Router 7, Axios |
 | Backend    | FastAPI (Python 3.9), SQLAlchemy, Pydantic |
 | Database   | PostgreSQL 15               |
-| Auth       | bcrypt (password), JWT (da implementare) |
+| Auth       | bcrypt (password), JWT      |
 | Container  | Docker + docker-compose     |
 
 ---
@@ -34,7 +32,8 @@ portafogli
   id_portafoglio   SERIAL PK
   nome             VARCHAR(100)
   valore           NUMERIC(10,2)
-  tipo             VARCHAR(50) NOT NULL DEFAULT 'conti'
+  tipo             SMALLINT NOT NULL DEFAULT 3
+                   (1=generale, 2=contanti, 3=conti, 4=carta di credito, 5=risparmi)
 
 utenti_portafogli      (tabella di join N:N)
   id_utente        INT FK -> utenti
@@ -44,6 +43,8 @@ utenti_portafogli      (tabella di join N:N)
 categorie
   id_categoria     SERIAL PK
   nome             VARCHAR(100) UNIQUE
+  tipo             SMALLINT NOT NULL DEFAULT 1
+                   (1=spesa, 2=guadagno, 3=trasferimento)
 
 utenti_categorie       (tabella di join N:N)
   id_utente        INT FK -> utenti
@@ -55,117 +56,92 @@ transazioni
   id_utente        INT FK -> utenti
   id_portafoglio   INT FK -> portafogli
   id_categoria     INT FK -> categorie
-  valore           NUMERIC(10,2)
+  tipo             SMALLINT NOT NULL DEFAULT 1
+                   (1=spesa, 2=guadagno, 3=trasferimento)
+  importo          NUMERIC(10,2)
+  descrizione      TEXT
   data_transazione DATE
   ora_transazione  TIME
   nascosto         BOOLEAN DEFAULT FALSE
   link_allegato    TEXT
-```
-
-### Relazioni chiave
-
-- Un utente puo' appartenere a N portafogli (personali + cointestati)
-- Un portafoglio puo' avere N utenti (cointestazione)
-- Una transazione appartiene a UN utente e UN portafoglio
-- Una transazione ha UNA categoria
-- Le categorie sono personali (legame N:N utente-categoria)
-- DELETE CASCADE su utenti e portafogli, DELETE RESTRICT su categorie
-
----
-
-## Struttura delle directory
-
-```
-Albert/
-├── docker-compose.yml          # Orchestrazione container
-├── entrypoint.sh               # (OBSOLETO - non usato, vedi backend_python/)
-├── README.md                   # Istruzioni rapide
-├── ARCHITECTURE.md             # Questo file
-├── .gitignore
-│
-├── backend_python/
-│   ├── Dockerfile
-│   ├── entrypoint.sh           # Attesa DB -> crea tabelle -> avvia uvicorn
-│   ├── requirements.txt
-│   └── app/
-│       ├── __init__.py
-│       ├── main.py             # App FastAPI, CORS, router
-│       ├── database.py         # Connessione SQLAlchemy a PostgreSQL
-│       ├── models.py           # Modelli ORM (solo Utente al momento)
-│       └── routes/
-│           ├── __init__.py
-│           └── auth.py         # POST /registrazione, POST /login
-│
-├── frontend/
-│   ├── Dockerfile
-│   ├── package.json
-│   └── src/
-│       ├── App.js              # Router: /login, /register
-│       └── components/
-│           └── auth/
-│               ├── Login.js
-│               ├── Login.css
-│               ├── Registrazione.js
-│               └── Registrazione.css
-│
-└── docker/
-    └── postgres/
-        └── init.sql            # Schema DDL iniziale del database
+  id_transazione_collegata INT FK -> transazioni (per trasferimenti)
 ```
 
 ---
 
-## Flusso di avvio con Docker
+## API endpoints
 
-1. `docker-compose up` avvia i 3 servizi in ordine:
-   - **db**: PostgreSQL con init.sql che crea le tabelle
-   - **backend**: attende il DB (healthcheck), crea le tabelle via SQLAlchemy, avvia uvicorn su :8000
-   - **frontend**: React dev server su :3000, comunica con backend via axios su localhost:8000
-
-2. Allineamento iniziale (prima volta):
-   ```bash
-   cd frontend && npm install    # solo se node_modules mancante
-   docker-compose up --build
-   ```
-
----
-
-## API endpoints (attuali)
-
-| Method | Path                     | Descrizione                         | Auth |
-|--------|--------------------------|-------------------------------------|------|
-| GET    | /                        | Health check backend                | No   |
-| POST   | /api/auth/registrazione  | Crea nuovo utente (+ JWT auto)      | No   |
-| POST   | /api/auth/login          | Login (restituisce JWT)             | No   |
-| POST   | /api/auth/reset-password | Reset password locale               | No   |
-| GET    | /api/categorie/          | Lista categorie utente              | JWT  |
-| POST   | /api/categorie/          | Crea/associa categoria              | JWT  |
-| PUT    | /api/categorie/{id}      | Modifica nome categoria             | JWT  |
-| DELETE | /api/categorie/{id}      | Rimuovi categoria                   | JWT  |
-| GET    | /api/portafogli/         | Lista portafogli utente             | JWT  |
-| POST   | /api/portafogli/         | Crea portafoglio (nome, valore, tipo) | JWT  |
-| PUT    | /api/portafogli/{id}     | Modifica portafoglio                | JWT  |
-| DELETE | /api/portafogli/{id}     | Rimuovi portafoglio                 | JWT  |
-
-### Da implementare
-
-- [ ] CRUD `/api/transazioni` — gestione spese
-- [ ] `GET  /api/report` — report/bilanci
+| Method | Path                        | Descrizione                         | Auth |
+|--------|-----------------------------|-------------------------------------|------|
+| GET    | /                           | Health check                        | No   |
+| POST   | /api/auth/registrazione     | Crea utente + portafoglio generale  | No   |
+| POST   | /api/auth/login             | Login (JWT)                         | No   |
+| POST   | /api/auth/reset-password    | Reset password                      | No   |
+| GET    | /api/portafogli/            | Lista portafogli (no generale)      | JWT  |
+| GET    | /api/portafogli/saldo       | Saldo totale                        | JWT  |
+| POST   | /api/portafogli/            | Crea portafoglio                    | JWT  |
+| PUT    | /api/portafogli/{id}        | Modifica portafoglio                | JWT  |
+| DELETE | /api/portafogli/{id}        | Rimuovi portafoglio                 | JWT  |
+| GET    | /api/categorie/             | Lista categorie                     | JWT  |
+| GET    | /api/categorie/per-tipo/{t} | Filtra per tipo (spesa/guadagno)    | JWT  |
+| POST   | /api/categorie/             | Crea categoria                      | JWT  |
+| PUT    | /api/categorie/{id}         | Modifica categoria                  | JWT  |
+| DELETE | /api/categorie/{id}         | Rimuovi categoria                   | JWT  |
+| GET    | /api/transazioni/           | Lista transazioni (?mese=YYYY-MM)   | JWT  |
+| POST   | /api/transazioni/           | Crea transazione                    | JWT  |
+| PUT    | /api/transazioni/{id}       | Modifica transazione                | JWT  |
+| DELETE | /api/transazioni/{id}       | Elimina transazione                 | JWT  |
+| POST   | /api/transazioni/trasferimento | Trasferimento tra portafogli     | JWT  |
+| POST   | /api/backup/import          | Importa XLSX/CSV                    | JWT  |
+| GET    | /api/backup/export          | Scarica backup CSV                  | JWT  |
 
 ---
 
-## Bug noti / cose da sistemare
+## Feature principali
 
-1. **Credenziali DB disallineate**: docker-compose crea utente `albert` sul DB `albert_app`,
-   ma `database.py` ha `postgresql://financeuser:***@db:5432/financedb`.
-   → Allineare a `albert`/`albert_app`.
+### Portafogli
+- 4 tipi selezionabili: Contanti, Conti, Carta di credito, Risparmi
+- "Generale" gestito automaticamente (creato alla registrazione, nascosto dalla lista)
+- Saldo visibile nella card Saldo della Dashboard
+- Ogni portafoglio mostra il saldo calcolato da transazioni
+- Modifica e eliminazione con conferma
 
-2. **Modelli SQLAlchemy**: ora includono `Utente`, `Portafoglio`, `Categoria`, `Transazione`, `UtentePortafoglio`, `UtenteCategoria`. ✅
+### Categorie
+- 3 tipi: Spesa, Guadagno, Trasferimento
+- Filtro automatico nel form transazioni in base al tipo selezionato
+- Condivise tra utenti (se stesso nome+tipo, vengono riusate)
 
-3. **JWT implementato**: login e registrazione restituiscono token JWT. ✅
+### Transazioni
+- Spesa/Guadagno con portafoglio, categoria, importo, descrizione
+- Trasferimento: crea due transazioni collegate (uscita + entrata)
+- Modifica inline con update automatico dei saldi
+- Eliminazione con aggiornamento saldi
+- Categorie di trasferimento create automaticamente
 
-4. **entrypoint.sh duplicato**: ce n'e' uno nella root del progetto (non referenziato
-   da docker-compose) e uno corretto in `backend_python/`. Rimuovere quello in root.
+### Dashboard
+- Card reali: Spese mese, Entrate mese, Saldo totale
+- Lista transazioni del mese corrente
+- FAB (+) apre modale di aggiunta rapida
 
-5. **Password in chiaro nei file**: `docker-compose.yml`, `database.py` e `init.sql`
-   contengono credenziali in chiaro. Valutare `.env` per produzione.
+### Backup
+- Import da XLSX (Money Manager) o CSV
+- Crea automaticamente portafogli, categorie e transazioni mancanti
+- Export CSV scaricabile con tutte le transazioni
+
+---
+
+## Avvio
+
+```bash
+cd frontend && npm install          # solo prima volta
+docker compose up --build
+```
+
+Accesso: http://localhost:3000
+Backend: http://localhost:8000
+
+## Database
+
+```bash
+docker exec -it albert_db psql -U albert -d albert_app
+```

@@ -1,23 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routes import auth, categorie, portafogli, transazioni
-
-## Importa i moduli necessari per la creazione delle tabelle
-#from .database import Base, engine
-#from .models import Utente, Portafoglio, Categoria, Transazione # Importa tutti i tuoi modelli
-#
-## Funzione per creare le tabelle del database
-#def create_tables():
-#    print("Creazione delle tabelle del database...")
-#    Base.metadata.create_all(bind=engine)
-#    print("Tabelle create con successo!")
-#
-## Chiama la funzione prima di istanziare l'app
-#create_tables()
+from .routes import auth, categorie, portafogli, transazioni, backup
 
 app = FastAPI()
 
-# Configura il middleware CORS (development: aperto a tutte le origini)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -30,6 +16,7 @@ app.include_router(auth.router, prefix="/api/auth", tags=["Autenticazione"])
 app.include_router(categorie.router, prefix="/api/categorie", tags=["Categorie"])
 app.include_router(portafogli.router, prefix="/api/portafogli", tags=["Portafogli"])
 app.include_router(transazioni.router, prefix="/api/transazioni", tags=["Transazioni"])
+app.include_router(backup.router, prefix="/api/backup", tags=["Backup"])
 
 @app.get("/")
 def read_root():

@@ -5,11 +5,13 @@ import Sidebar from './Sidebar';
 import Categorie from './Categorie';
 import Portafogli from './Portafogli';
 import Transazioni from './Transazioni';
+import Impostazioni from './Impostazioni';
 import './Dashboard.css';
 
 const PAGE_TITLES = {
     dashboard: 'Dashboard', transazioni: 'Transazioni',
     portafogli: 'Portafogli', categorie: 'Categorie', report: 'Report',
+    impostazioni: 'Impostazioni',
 };
 
 const TIPI_ICONE = { spesa: '💸', guadagno: '💰', trasferimento: '🔄' };
@@ -48,11 +50,12 @@ const Dashboard = () => {
 
     const renderPage = () => {
         switch (activePage) {
-            case 'categorie':  return <Categorie />;
-            case 'portafogli': return <Portafogli />;
-            case 'transazioni': return <Transazioni />;
+            case 'categorie':     return <Categorie />;
+            case 'portafogli':    return <Portafogli />;
+            case 'transazioni':   return <Transazioni />;
+            case 'impostazioni':  return <Impostazioni />;
             case 'dashboard':
-            default: return <DashboardHome />;
+            default:              return <DashboardHome />;
         }
     };
 
@@ -80,14 +83,12 @@ const Dashboard = () => {
                 </header>
                 <div className="dashboard-content">{renderPage()}</div>
             </main>
-
-            {/* FAB solo su Dashboard, apre il modale di aggiunta rapida */}
             {activePage === 'dashboard' && <QuickAddFAB />}
         </div>
     );
 };
 
-/* ── Quick Add FAB + Modal ── */
+/* Quick Add FAB + Modal */
 const QuickAddFAB = () => {
     const [open, setOpen] = useState(false);
     const [portafogli, setPortafogli] = useState([]);
@@ -102,11 +103,9 @@ const QuickAddFAB = () => {
     const apri = async () => {
         try {
             const [rpf, rcat] = await Promise.all([
-                api.get('/api/portafogli/'),
-                api.get('/api/categorie/'),
+                api.get('/api/portafogli/'), api.get('/api/categorie/'),
             ]);
-            setPortafogli(rpf.data);
-            setCategorie(rcat.data);
+            setPortafogli(rpf.data); setCategorie(rcat.data);
             if (rpf.data.length > 0) setPfId(String(rpf.data[0].id_portafoglio));
             const catF = rcat.data.filter(c => c.tipo === 'spesa');
             if (catF.length > 0) setCatId(String(catF[0].id_categoria));
@@ -124,11 +123,8 @@ const QuickAddFAB = () => {
                 id_portafoglio: parseInt(pfId), id_categoria: parseInt(catId),
                 tipo, importo: parseFloat(importo), descrizione: desc.trim(),
             });
-            chiudi();
-            window.location.reload(); // refresh dashboard
-        } catch (err) {
-            setMsg(err.response?.data?.detail || 'Errore');
-        }
+            chiudi(); window.location.reload();
+        } catch (err) { setMsg(err.response?.data?.detail || 'Errore'); }
     };
 
     const catFiltrate = categorie.filter(c => c.tipo === tipo);
@@ -177,13 +173,12 @@ const QuickAddFAB = () => {
     );
 };
 
-/* ── Dashboard Home ── */
+/* Dashboard Home */
 const DashboardHome = () => {
     const [saldo, setSaldo] = useState(null);
     const [transazioni, setTransazioni] = useState([]);
     const [loading, setLoading] = useState(true);
-
-    const meseCorrente = new Date().toISOString().slice(0, 7); // "YYYY-MM"
+    const meseCorrente = new Date().toISOString().slice(0, 7);
 
     const carica = useCallback(async () => {
         try {
@@ -200,8 +195,6 @@ const DashboardHome = () => {
 
     const spese = transazioni.filter(t => t.tipo === 'spesa').reduce((a,t) => a + t.importo, 0);
     const entrate = transazioni.filter(t => t.tipo === 'guadagno').reduce((a,t) => a + t.importo, 0);
-
-    const meseLabel = new Date().toLocaleString('it-IT', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase());
 
     if (loading) return <p className="dash-loading">Caricamento...</p>;
 
@@ -223,11 +216,10 @@ const DashboardHome = () => {
                     </span>
                 </div>
             </div>
-
             {transazioni.length === 0 ? (
                 <div className="dashboard-placeholder">
                     <div className="placeholder-icon">📊</div>
-                    <p>Nessuna transazione a {meseLabel}.</p>
+                    <p>Nessuna transazione a {new Date().toLocaleString('it-IT', { month: 'long' }).replace(/^\w/, c => c.toUpperCase())}.</p>
                     <p className="placeholder-hint">Usa il pulsante <strong>+</strong> per aggiungerne una.</p>
                 </div>
             ) : (

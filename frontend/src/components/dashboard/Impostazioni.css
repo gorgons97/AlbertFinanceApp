@@ -1,0 +1,44 @@
+/* Impostazioni.css */
+
+.impostazioni-page { max-width: 700px; }
+.impostazioni-page h2 { font-size: 1.5rem; font-weight: 700; color: #111827; margin: 0 0 1.5rem; }
+
+.impostazioni-section {
+  background: #fff; border: 1px solid var(--gray-200, #e5e7eb);
+  border-radius: var(--radius-lg, 0.75rem); padding: 1.5rem; margin-bottom: 1.5rem;
+}
+.impostazioni-section h3 { font-size: 1.1rem; color: #111827; margin: 0 0 0.5rem; }
+.impostazioni-desc { color: #6b7280; font-size: 0.9rem; margin: 0 0 1.25rem; line-height: 1.5; }
+
+.backup-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.backup-card {
+  text-align: center; padding: 1.5rem 1rem;
+  border: 2px dashed var(--gray-300, #d1d5db); border-radius: var(--radius-md, 0.5rem);
+}
+.backup-icon { font-size: 2rem; display: block; margin-bottom: 0.5rem; }
+.backup-card h4 { font-size: 1rem; color: #111827; margin: 0 0 0.5rem; }
+.backup-card p { font-size: 0.85rem; color: #6b7280; margin: 0 0 1rem; line-height: 1.4; }
+
+.backup-btn {
+  padding: 0.6rem 1.5rem; border: none; border-radius: var(--radius-md, 0.5rem);
+  font-size: 0.9rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 150ms;
+}
+.backup-btn-export { background: var(--primary-color, #4f46e5); color: #fff; }
+.backup-btn-export:hover { background: #4338ca; }
+.backup-btn-import { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+.backup-btn-import:hover { background: #dcfce7; }
+.backup-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.impostazioni-message {
+  margin-top: 1rem; padding: 0.75rem 1rem; border-radius: var(--radius-md, 0.5rem); font-size: 0.875rem;
+}
+.impostazioni-message.error { background: #fef2f2; color: #ef4444; border: 1px solid #fecaca; }
+.impostazioni-message.success { background: #f0fdf4; color: #10b981; border: 1px solid #bbf7d0; }
+.impostazioni-message.success ul { margin: 0.5rem 0 0; padding-left: 1.25rem; }
+
+@media (max-width: 767px) {
+  .impostazioni-page { max-width: 100%; }
+  .impostazioni-page h2 { font-size: 1.25rem; }
+  .backup-actions { grid-template-columns: 1fr; }
+  .impostazioni-section { padding: 1rem; }
+}

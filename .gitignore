@@ -1,47 +1,49 @@
-# Nella root del progetto Albert
-touch .gitignore
+# Dipendenze
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
 
-# Aggiungi queste righe al .gitignore
-cat >> .gitignore << 'EOF'
-# Node.js
-frontend/node_modules/
-frontend/npm-debug.log*
-frontend/yarn-debug.log*
-frontend/yarn-error.log*
+# Docker
+docker/postgres/data/
 
-# Package-lock (opzionale, alcuni preferiscono tenerlo)
-# frontend/package-lock.json
-
-# Build files
-frontend/build/
-frontend/dist/
-
-# Environment files
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# IDE files
-.vscode/
+# IDE
 .idea/
+.vscode/
 *.swp
 *.swo
 
-# Docker
-.docker/
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+frontend/build/
+*.egg-info/
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Database dumps
+*.sql.gz
+*.dump
+
+# Backup files (user data)
+*.xlsx
+*.xls
+*.csv
+backup/
+
+# Documentation (except ARCHITECTURE.md)
+*.md
+!ARCHITECTURE.md
+!README.md
 
 # Logs
-logs/
 *.log
 
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-EOF
+# Cache
+.cache/
+.pytest_cache/
