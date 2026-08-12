@@ -137,11 +137,21 @@ cd frontend && npm install          # solo prima volta
 docker compose up --build
 ```
 
-Accesso: http://localhost:3000
-Backend: http://localhost:8000
+Accesso: http://localhost:3001
+Backend: http://localhost:8001
+Database: localhost:5433
+
+## Porte
+
+| Servizio  | Host  | Container |
+|-----------|-------|-----------|
+| Frontend  | 3001  | 3000     |
+| Backend   | 8001  | 8000     |
+| Database  | 5433  | 5432     |
 
 ## Database
 
 ```bash
-docker exec -it albert_db psql -U albert -d albert_app
+docker exec -it albert_db psql -U albert -d albert_app -p 5432
+```
 ```

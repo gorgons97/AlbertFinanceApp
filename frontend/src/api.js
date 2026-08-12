@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Base URL dinamico: usa lo stesso host del frontend, porta 8000 per il backend
-const API_BASE = `http://${window.location.hostname}:8000`;
+// Base URL dinamico: usa lo stesso host del frontend, porta 8001 per il backend
+const API_BASE = `http://${window.location.hostname}:8001`;
 
 const api = axios.create({
     baseURL: API_BASE,

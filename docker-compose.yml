@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:15
@@ -9,7 +7,7 @@ services:
       POSTGRES_PASSWORD: AlbertPig2025!
       POSTGRES_DB: albert_app
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
       - db_data:/var/lib/postgresql/data
@@ -18,18 +16,18 @@ services:
       interval: 30s
       timeout: 10s
       retries: 10
-      start_period: 60s 
+      start_period: 60s
 
   backend:
     build: ./backend_python
     container_name: albert_backend
     ports:
-      - "8000:8000"
+      - "8001:8000"
     volumes:
       - ./backend_python:/app
     depends_on:
       db:
-        condition: service_healthy  
+        condition: service_healthy
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://albert:AlbertPig2025!@db:5432/albert_app
@@ -38,18 +36,16 @@ services:
     build: ./frontend
     container_name: albert_frontend
     ports:
-      - "3000:3000"
+      - "3001:3000"
     volumes:
       - ./frontend/src:/app/src:ro
       - ./frontend/public:/app/public:ro
-      #- /app/node_modules  Evita che node_modules venga sovrascritto
     environment:
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
     depends_on:
       - backend
     restart: unless-stopped
-    
 
 volumes:
   db_data:
