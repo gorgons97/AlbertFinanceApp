@@ -41,15 +41,23 @@ async def importa_backup(
         for r in reader:
             if len(r) >= 6:
                 rows.append(r)
-    elif filename.lower().endswith(('.xlsx', '.xls')):
+    elif filename.lower().endswith('.xlsx'):
         import openpyxl
         wb = openpyxl.load_workbook(BytesIO(content))
         ws = wb.active
         for row in ws.iter_rows(min_row=2, values_only=True):
             if len(row) >= 6 and row[0] is not None:
                 rows.append(row)
+    elif filename.lower().endswith('.xls'):
+        import xlrd
+        book = xlrd.open_workbook(file_contents=content)
+        sheet = book.sheet_by_index(0)
+        for i in range(1, sheet.nrows):
+            row = sheet.row_values(i)
+            if len(row) >= 6 and row[0] != '':
+                rows.append(row)
     else:
-        raise HTTPException(400, "Formato non supportato. Usa .xlsx o .csv")
+        raise HTTPException(400, "Formato non supportato. Usa .xlsx, .xls o .csv")
 
     if not rows:
         raise HTTPException(400, "Nessuna riga valida trovata")

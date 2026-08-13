@@ -34,10 +34,12 @@ CREATE TABLE utenti_portafogli (
 );
 
 -- Tabella Categoria (tipo: 1=spesa 2=guadagno 3=trasferimento)
+-- UNIQUE composto (nome, tipo): permette stessa categoria con tipo diverso (es. "Altro" spesa e "Altro" guadagno)
 CREATE TABLE categorie (
     id_categoria SERIAL PRIMARY KEY,
-    nome VARCHAR(100) UNIQUE NOT NULL,
-    tipo SMALLINT NOT NULL DEFAULT 1
+    nome VARCHAR(100) NOT NULL,
+    tipo SMALLINT NOT NULL DEFAULT 1,
+    UNIQUE (nome, tipo)
 );
 
 -- Tabella di collegamento Utente <-> Categoria

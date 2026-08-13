@@ -6,4 +6,5 @@ passlib
 bcrypt<4.1.0
 python-jose[cryptography]
 openpyxl
+xlrd
 python-multipart

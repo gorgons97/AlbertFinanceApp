@@ -69,9 +69,10 @@ class Portafoglio(Base):
 
 class Categoria(Base):
     __tablename__ = "categorie"
+    __table_args__ = (UniqueConstraint('nome', 'tipo', name='categorie_nome_tipo_key'),)
 
     id_categoria = Column(Integer, primary_key=True, index=True)
-    nome         = Column(String(100), unique=True, nullable=False)
+    nome         = Column(String(100), nullable=False)
     tipo         = Column(SmallInteger, nullable=False, default=1)  # 1=spesa, 2=guadagno, 3=trasferimento
 
     # Relazioni
