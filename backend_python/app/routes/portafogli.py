@@ -1,14 +1,20 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 from pydantic import BaseModel, validator
-from decimal import Decimal
+from datetime import datetime
+from typing import Optional
 from ..database import get_db
-from ..models import Portafoglio, Utente, TIPO_PORTAFOGLIO, TIPO_PORTAFOGLIO_REV
+from ..models import (
+    Portafoglio, Utente, Notifica, InvitoPortafoglio,
+    utenti_portafogli,
+    TIPO_PORTAFOGLIO, TIPO_PORTAFOGLIO_REV, RUOLO_PORTAFOGLIO,
+)
 from .auth import get_current_user
 
 router = APIRouter()
 
-TIPI_VALIDI = list(TIPO_PORTAFOGLIO_REV.keys())  # ['generale','contanti','conti','carta di credito','risparmi']
+TIPI_VALIDI = list(TIPO_PORTAFOGLIO_REV.keys())
 
 
 def _tipo_str(tipo_int: int) -> str:
@@ -19,10 +25,19 @@ def _tipo_int(tipo_str: str) -> int:
     return TIPO_PORTAFOGLIO_REV.get(tipo_str, 3)
 
 
-def _portafoglio_to_out(pf: Portafoglio, somma_altri: float = None) -> dict:
-    """Converte un Portafoglio ORM in dict per l'output.
-    Se e' di tipo 'generale', il valore e' la somma degli altri portafogli."""
-    if pf.tipo == 1 and somma_altri is not None:  # generale
+def _ruolo_utente(db: Session, id_utente: int, id_portafoglio: int) -> str:
+    """Restituisce il ruolo dell'utente su un portafoglio."""
+    r = db.execute(
+        select(utenti_portafogli.c.ruolo).where(
+            utenti_portafogli.c.id_utente == id_utente,
+            utenti_portafogli.c.id_portafoglio == id_portafoglio,
+        )
+    ).scalar()
+    return RUOLO_PORTAFOGLIO.get(r, 'cointestatario')
+
+
+def _portafoglio_to_out(pf: Portafoglio, somma_altri: float = None, ruolo: str = None) -> dict:
+    if pf.tipo == 1 and somma_altri is not None:
         valore = somma_altri
     else:
         valore = float(pf.valore) if pf.valore else 0.0
@@ -31,6 +46,7 @@ def _portafoglio_to_out(pf: Portafoglio, somma_altri: float = None) -> dict:
         "nome": pf.nome,
         "valore": valore,
         "tipo": _tipo_str(pf.tipo),
+        "ruolo": ruolo,
     }
 
 
@@ -63,9 +79,14 @@ class PortafoglioOut(BaseModel):
     nome: str
     valore: float
     tipo: str
+    ruolo: Optional[str] = None
 
     class Config:
         orm_mode = True
+
+
+class InvitaPortafoglioRequest(BaseModel):
+    email: str
 
 
 # GET /api/portafogli — lista portafogli dell'utente (escluso generale)
@@ -83,8 +104,13 @@ def lista_portafogli(
 
     # Somma di tutti i portafogli non generali (per il calcolo del saldo)
     somma = sum(float(pf.valore) if pf.valore else 0.0 for pf in user.portafogli if pf.tipo != 1)
-    # Restituisce solo i portafogli NON generali
-    return [_portafoglio_to_out(pf, somma) for pf in user.portafogli if pf.tipo != 1]
+    # Restituisce solo i portafogli NON generali, con il ruolo dell'utente
+    out = []
+    for pf in user.portafogli:
+        if pf.tipo == 1:
+            continue
+        out.append(_portafoglio_to_out(pf, somma, _ruolo_utente(db, user.id_utente, pf.id_portafoglio)))
+    return out
 
 
 # GET /api/portafogli/saldo — solo il saldo totale (somma di tutti i portafogli)
@@ -139,7 +165,7 @@ def crea_portafoglio(
     db.refresh(nuovo)
     # Per il generale, il valore mostrato e' la somma degli altri
     somma = sum(float(pf.valore) if pf.valore else 0.0 for pf in user.portafogli if pf.tipo != 1)
-    return _portafoglio_to_out(nuovo, somma)
+    return _portafoglio_to_out(nuovo, somma, 'proprietario')
 
 
 # PUT /api/portafogli/{id} — modifica un portafoglio
@@ -183,7 +209,7 @@ def modifica_portafoglio(
     db.refresh(pf)
 
     somma = sum(float(p.valore) if p.valore else 0.0 for p in user.portafogli if p.tipo != 1)
-    return _portafoglio_to_out(pf, somma)
+    return _portafoglio_to_out(pf, somma, _ruolo_utente(db, user.id_utente, portafoglio_id))
 
 
 # DELETE /api/portafogli/{id} — rimuovi un portafoglio dell'utente
@@ -203,6 +229,132 @@ def rimuovi_portafoglio(
     if pf.tipo == 1:
         raise HTTPException(status_code=400, detail="Il portafoglio generale non puo' essere eliminato")
 
+    # Solo il proprietario puo' eliminare
+    if _ruolo_utente(db, user.id_utente, portafoglio_id) != 'proprietario':
+        raise HTTPException(status_code=403, detail="Solo il proprietario puo' eliminare il portafoglio")
+
     user.portafogli.remove(pf)
     db.commit()
     return {"message": f"Portafoglio '{pf.nome}' rimosso"}
+
+
+# POST /api/portafogli/{id}/invita — invita un utente (per email)
+@router.post("/{portafoglio_id}/invita")
+def invita_utente(
+    portafoglio_id: int,
+    data: InvitaPortafoglioRequest,
+    user: Utente = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    pf = db.query(Portafoglio).filter(Portafoglio.id_portafoglio == portafoglio_id).first()
+    if not pf:
+        raise HTTPException(404, "Portafoglio non trovato")
+    if pf not in user.portafogli:
+        raise HTTPException(403, "Portafoglio non associato al tuo account")
+    if pf.tipo == 1:
+        raise HTTPException(400, "Il portafoglio generale non e' condivisibile")
+
+    email = data.email.strip().lower()
+    if not email:
+        raise HTTPException(400, "Email non valida")
+    if email == user.email.lower():
+        raise HTTPException(400, "Non puoi invitare te stesso")
+
+    # Trova l'utente invitato (se esiste)
+    invitato = db.query(Utente).filter(Utente.email.ilike(email)).first()
+
+    # Se esiste e gia' membro, errore
+    if invitato and invitato in pf.utenti:
+        raise HTTPException(400, "Utente gia' membro del portafoglio")
+
+    # Evita inviti duplicati pendenti
+    existing = db.query(InvitoPortafoglio).filter(
+        InvitoPortafoglio.id_portafoglio == portafoglio_id,
+        InvitoPortafoglio.email_invitato == email,
+        InvitoPortafoglio.stato == 1,
+    ).first()
+    if existing:
+        raise HTTPException(400, "Invito gia' inviato a questa email")
+
+    inv = InvitoPortafoglio(
+        id_portafoglio=portafoglio_id,
+        id_invitante=user.id_utente,
+        email_invitato=email,
+        id_invitato=invitato.id_utente if invitato else None,
+        stato=1,
+    )
+    db.add(inv)
+    db.flush()
+
+    # Notifica solo se l'utente esiste gia' (altrimenti si attiva alla registrazione)
+    if invitato:
+        notifica = Notifica(
+            id_utente=invitato.id_utente,
+            id_mittente=user.id_utente,
+            tipo=1,
+            titolo=f"Invito al portafoglio '{pf.nome}'",
+            messaggio=f"{user.nome} {user.cognome} ti ha invitato a condividere il portafoglio '{pf.nome}'.",
+            riferimento_id=inv.id_invito,
+        )
+        db.add(notifica)
+
+    db.commit()
+    return {
+        "message": "Invito inviato",
+        "id_invito": inv.id_invito,
+        "utente_esistente": invitato is not None,
+    }
+
+
+# DELETE /api/portafogli/{id}/membri/{id_utente} — rimuovi un cointestatario
+@router.delete("/{portafoglio_id}/membri/{id_utente}")
+def rimuovi_membro(
+    portafoglio_id: int,
+    id_utente: int,
+    user: Utente = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    pf = db.query(Portafoglio).filter(Portafoglio.id_portafoglio == portafoglio_id).first()
+    if not pf:
+        raise HTTPException(404, "Portafoglio non trovato")
+    if pf not in user.portafogli:
+        raise HTTPException(403, "Portafoglio non associato al tuo account")
+
+    # Solo il proprietario puo' rimuovere membri
+    if _ruolo_utente(db, user.id_utente, portafoglio_id) != 'proprietario':
+        raise HTTPException(403, "Solo il proprietario puo' rimuovere membri")
+
+    if id_utente == user.id_utente:
+        raise HTTPException(400, "Non puoi rimuoverti da solo")
+
+    target = db.query(Utente).filter(Utente.id_utente == id_utente).first()
+    if not target or target not in pf.utenti:
+        raise HTTPException(404, "Membro non trovato")
+
+    pf.utenti.remove(target)
+    db.commit()
+    return {"message": f"Membro rimosso dal portafoglio"}
+
+
+# GET /api/portafogli/{id}/membri — lista membri del portafoglio
+@router.get("/{portafoglio_id}/membri")
+def lista_membri(
+    portafoglio_id: int,
+    user: Utente = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    pf = db.query(Portafoglio).filter(Portafoglio.id_portafoglio == portafoglio_id).first()
+    if not pf:
+        raise HTTPException(404, "Portafoglio non trovato")
+    if pf not in user.portafogli:
+        raise HTTPException(403, "Portafoglio non associato al tuo account")
+
+    membri = []
+    for u in pf.utenti:
+        membri.append({
+            "id_utente": u.id_utente,
+            "nome": f"{u.nome} {u.cognome}".strip(),
+            "email": u.email,
+            "ruolo": _ruolo_utente(db, u.id_utente, portafoglio_id),
+        })
+    return membri

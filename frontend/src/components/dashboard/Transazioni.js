@@ -30,24 +30,54 @@ const Transazioni = () => {
 
     const [deleteTarget, setDeleteTarget] = useState(null);
 
+    // Filtri
+    const [filterTipo, setFilterTipo] = useState('');
+    const [filterPortafoglio, setFilterPortafoglio] = useState('');
+    const [filterDataInizio, setFilterDataInizio] = useState('');
+    const [filterDataFine, setFilterDataFine] = useState('');
+
     useEffect(() => { caricaDati(); }, []);
 
     const caricaDati = async () => {
         try {
             setLoading(true);
-            const [rTrans, rPf, rCat] = await Promise.all([
-                api.get('/api/transazioni/?limit=100'),
+            const [rPf, rCat] = await Promise.all([
                 api.get('/api/portafogli/'),
                 api.get('/api/categorie/'),
             ]);
-            setTransazioni(rTrans.data);
             setPortafogli(rPf.data);
             setCategorie(rCat.data);
             if (rPf.data.length > 0) setFormPortafoglio(String(rPf.data[0].id_portafoglio));
             const cf = rCat.data.filter(c => c.tipo === 'spesa');
             if (cf.length > 0) setFormCategoria(String(cf[0].id_categoria));
+            await caricaTransazioni();
         } catch { setError('Errore nel caricamento dati'); }
         finally { setLoading(false); }
+    };
+
+    const caricaTransazioni = async (filtri = {}) => {
+        const params = new URLSearchParams();
+        const f = {
+            tipo: filtri.tipo !== undefined ? filtri.tipo : filterTipo,
+            id_portafoglio: filtri.id_portafoglio !== undefined ? filtri.id_portafoglio : filterPortafoglio,
+            data_inizio: filtri.data_inizio !== undefined ? filtri.data_inizio : filterDataInizio,
+            data_fine: filtri.data_fine !== undefined ? filtri.data_fine : filterDataFine,
+        };
+        if (f.tipo) params.append('tipo', f.tipo);
+        if (f.id_portafoglio) params.append('id_portafoglio', f.id_portafoglio);
+        if (f.data_inizio) params.append('data_inizio', f.data_inizio);
+        if (f.data_fine) params.append('data_fine', f.data_fine);
+        params.append('limit', '500');
+        const res = await api.get(`/api/transazioni/?${params.toString()}`);
+        setTransazioni(res.data);
+    };
+
+    const resetFiltri = () => {
+        setFilterTipo('');
+        setFilterPortafoglio('');
+        setFilterDataInizio('');
+        setFilterDataFine('');
+        caricaTransazioni({ tipo: '', id_portafoglio: '', data_inizio: '', data_fine: '' });
     };
 
     const catDisp = categorie.filter(c => c.tipo === formTipo);
@@ -140,6 +170,28 @@ const Transazioni = () => {
                     </button>
                 </div>
             </form>
+
+            <div className="transazioni-filtri">
+                <select className="transazioni-filter-input" value={filterTipo}
+                    onChange={e => { setFilterTipo(e.target.value); caricaTransazioni({ tipo: e.target.value }); }}>
+                    <option value="">Tutti i tipi</option>
+                    <option value="spesa">💸 Spese</option>
+                    <option value="guadagno">💰 Guadagni</option>
+                    <option value="trasferimento">🔄 Trasferimenti</option>
+                </select>
+                <select className="transazioni-filter-input" value={filterPortafoglio}
+                    onChange={e => { setFilterPortafoglio(e.target.value); caricaTransazioni({ id_portafoglio: e.target.value }); }}>
+                    <option value="">Tutti i portafogli</option>
+                    {portafogli.map(p => <option key={p.id_portafoglio} value={p.id_portafoglio}>{p.nome}</option>)}
+                </select>
+                <input type="date" className="transazioni-filter-input" value={filterDataInizio}
+                    onChange={e => { setFilterDataInizio(e.target.value); caricaTransazioni({ data_inizio: e.target.value }); }} />
+                <input type="date" className="transazioni-filter-input" value={filterDataFine}
+                    onChange={e => { setFilterDataFine(e.target.value); caricaTransazioni({ data_fine: e.target.value }); }} />
+                <button className="transazioni-filter-reset" onClick={resetFiltri} title="Azzera filtri">
+                    ✕
+                </button>
+            </div>
 
             {error && <div className="transazioni-message error">{error}</div>}
             {success && <div className="transazioni-message success">{success}</div>}

@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routes import auth, categorie, portafogli, transazioni, backup
+from .routes import auth, categorie, portafogli, transazioni, backup, notifiche
 
 app = FastAPI()
 
@@ -17,6 +17,7 @@ app.include_router(categorie.router, prefix="/api/categorie", tags=["Categorie"]
 app.include_router(portafogli.router, prefix="/api/portafogli", tags=["Portafogli"])
 app.include_router(transazioni.router, prefix="/api/transazioni", tags=["Transazioni"])
 app.include_router(backup.router, prefix="/api/backup", tags=["Backup"])
+app.include_router(notifiche.router, prefix="/api/notifiche", tags=["Notifiche"])
 
 @app.get("/")
 def read_root():

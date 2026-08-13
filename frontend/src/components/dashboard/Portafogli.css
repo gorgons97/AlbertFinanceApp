@@ -173,6 +173,16 @@
   flex-shrink: 0;
 }
 
+.pf-ruolo-badge {
+  font-size: 0.72rem;
+  color: #7c3aed;
+  background: #ede9fe;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .pf-valore {
   font-size: 1rem;
   color: #1f2937;
@@ -182,6 +192,7 @@
 }
 
 /* Pulsanti azione */
+.pf-invite-btn,
 .pf-edit-btn,
 .pf-delete-btn {
   width: 32px;
@@ -195,6 +206,14 @@
   justify-content: center;
   flex-shrink: 0;
   transition: all 150ms;
+}
+
+.pf-invite-btn {
+  color: var(--gray-400, #9ca3af);
+}
+.pf-invite-btn:hover {
+  background: #ede9fe;
+  color: #7c3aed;
 }
 
 .pf-edit-btn {

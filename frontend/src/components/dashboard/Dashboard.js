@@ -6,12 +6,13 @@ import Categorie from './Categorie';
 import Portafogli from './Portafogli';
 import Transazioni from './Transazioni';
 import Impostazioni from './Impostazioni';
+import Notifiche from './Notifiche';
 import './Dashboard.css';
 
 const PAGE_TITLES = {
     dashboard: 'Dashboard', transazioni: 'Transazioni',
     portafogli: 'Portafogli', categorie: 'Categorie', report: 'Report',
-    impostazioni: 'Impostazioni',
+    impostazioni: 'Impostazioni', notifiche: 'Notifiche',
 };
 
 const TIPI_ICONE = { spesa: '💸', guadagno: '💰', trasferimento: '🔄' };
@@ -21,10 +22,21 @@ const Dashboard = () => {
     const [sidebarCollapsed, setSidebarCollapsed] = useState(window.innerWidth < 768);
     const [mobileOpen, setMobileOpen] = useState(false);
     const [activePage, setActivePage] = useState('dashboard');
+    const [nonLette, setNonLette] = useState(0);
 
     useEffect(() => {
         if (!localStorage.getItem('access_token')) navigate('/login', { replace: true });
     }, [navigate]);
+
+    // Carica il numero di notifiche non lette
+    const caricaNonLette = useCallback(async () => {
+        try {
+            const res = await api.get('/api/notifiche/');
+            setNonLette(res.data.non_lette || 0);
+        } catch {}
+    }, []);
+
+    useEffect(() => { caricaNonLette(); }, [caricaNonLette]);
 
     useEffect(() => {
         const h = () => { if (window.innerWidth < 768) setSidebarCollapsed(true); };
@@ -54,6 +66,7 @@ const Dashboard = () => {
             case 'portafogli':    return <Portafogli />;
             case 'transazioni':   return <Transazioni />;
             case 'impostazioni':  return <Impostazioni />;
+            case 'notifiche':     return <Notifiche onCambio={setNonLette} />;
             case 'dashboard':
             default:              return <DashboardHome />;
         }
@@ -80,6 +93,13 @@ const Dashboard = () => {
                     <span className="dashboard-month">
                         {new Date().toLocaleString('it-IT', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase())}
                     </span>
+                    <button className="notif-bell" onClick={() => setActivePage('notifiche')} title="Notifiche">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                        </svg>
+                        {nonLette > 0 && <span className="notif-badge">{nonLette > 9 ? '9+' : nonLette}</span>}
+                    </button>
                 </header>
                 <div className="dashboard-content">{renderPage()}</div>
             </main>

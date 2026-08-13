@@ -127,8 +127,11 @@ def _aggiorna_saldo_portafoglio(db: Session, id_portafoglio: int, id_utente: int
 def lista_transazioni(
     user: Utente = Depends(get_current_user),
     db: Session = Depends(get_db),
-    tipo: Optional[str] = Query(None),
+    tipo: Optional[str] = Query(None, description="spesa/guadagno/trasferimento"),
     mese: Optional[str] = Query(None, description="YYYY-MM"),
+    id_portafoglio: Optional[int] = Query(None, description="Filtra per portafoglio"),
+    data_inizio: Optional[str] = Query(None, description="YYYY-MM-DD"),
+    data_fine: Optional[str] = Query(None, description="YYYY-MM-DD"),
     limit: int = Query(100, ge=1, le=500),
 ):
     query = db.query(Transazione).filter(
@@ -137,15 +140,31 @@ def lista_transazioni(
     )
     if tipo and tipo in TIPI_VALIDI:
         query = query.filter(Transazione.tipo == _tipo_int(tipo))
+    if id_portafoglio:
+        query = query.filter(Transazione.id_portafoglio == id_portafoglio)
     if mese:
         try:
             anno, m = map(int, mese.split('-'))
+            inizio_mese = date_type(anno, m, 1)
+            if m == 12:
+                fine_mese = date_type(anno + 1, 1, 1)
+            else:
+                fine_mese = date_type(anno, m + 1, 1)
             query = query.filter(
-                Transazione.data_transazione >= date_type(anno, m, 1),
-                Transazione.data_transazione < date_type(anno + (m // 12), (m % 12) + 1, 1) if m < 12
-                else date_type(anno + 1, 1, 1)
+                Transazione.data_transazione >= inizio_mese,
+                Transazione.data_transazione < fine_mese,
             )
         except (ValueError, IndexError):
+            pass
+    if data_inizio:
+        try:
+            query = query.filter(Transazione.data_transazione >= date_type.fromisoformat(data_inizio))
+        except ValueError:
+            pass
+    if data_fine:
+        try:
+            query = query.filter(Transazione.data_transazione <= date_type.fromisoformat(data_fine))
+        except ValueError:
             pass
 
     transazioni = query.order_by(

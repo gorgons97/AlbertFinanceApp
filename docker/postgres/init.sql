@@ -28,6 +28,8 @@ CREATE TABLE portafogli (
 CREATE TABLE utenti_portafogli (
     id_utente INT NOT NULL,
     id_portafoglio INT NOT NULL,
+    ruolo SMALLINT NOT NULL DEFAULT 1,
+    data_aggiunta TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id_utente, id_portafoglio),
     FOREIGN KEY (id_utente) REFERENCES utenti(id_utente) ON DELETE CASCADE,
     FOREIGN KEY (id_portafoglio) REFERENCES portafogli(id_portafoglio) ON DELETE CASCADE
@@ -69,4 +71,35 @@ CREATE TABLE transazioni (
     FOREIGN KEY (id_portafoglio) REFERENCES portafogli(id_portafoglio) ON DELETE CASCADE,
     FOREIGN KEY (id_categoria) REFERENCES categorie(id_categoria) ON DELETE RESTRICT,
     FOREIGN KEY (id_transazione_collegata) REFERENCES transazioni(id_transazione) ON DELETE SET NULL
+);
+
+-- Tabella Notifica (tipo: 1=invito_portafoglio 2=info 3=messaggio)
+CREATE TABLE notifiche (
+    id_notifica SERIAL PRIMARY KEY,
+    id_utente INT NOT NULL,
+    id_mittente INT,
+    tipo SMALLINT NOT NULL DEFAULT 2,
+    titolo VARCHAR(150) NOT NULL,
+    messaggio TEXT,
+    riferimento_id INT,
+    letto BOOLEAN NOT NULL DEFAULT FALSE,
+    data_creazione TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_utente) REFERENCES utenti(id_utente) ON DELETE CASCADE,
+    FOREIGN KEY (id_mittente) REFERENCES utenti(id_utente) ON DELETE SET NULL
+);
+CREATE INDEX ix_notifiche_id_utente ON notifiche(id_utente);
+
+-- Tabella Inviti Portafoglio (stato: 1=in_attesa 2=accettato 3=rifiutato 4=annullato)
+CREATE TABLE inviti_portafogli (
+    id_invito SERIAL PRIMARY KEY,
+    id_portafoglio INT NOT NULL,
+    id_invitante INT NOT NULL,
+    email_invitato VARCHAR(100) NOT NULL,
+    id_invitato INT,
+    stato SMALLINT NOT NULL DEFAULT 1,
+    data_creazione TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    data_risposta TIMESTAMP WITH TIME ZONE,
+    FOREIGN KEY (id_portafoglio) REFERENCES portafogli(id_portafoglio) ON DELETE CASCADE,
+    FOREIGN KEY (id_invitante) REFERENCES utenti(id_utente) ON DELETE CASCADE,
+    FOREIGN KEY (id_invitato) REFERENCES utenti(id_utente) ON DELETE SET NULL
 );

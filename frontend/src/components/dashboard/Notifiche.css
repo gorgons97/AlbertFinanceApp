@@ -1,0 +1,54 @@
+/* Notifiche.css */
+
+.notifiche-page { max-width: 700px; }
+.notifiche-page h2 { font-size: 1.5rem; font-weight: 700; color: #111827; margin: 0 0 1.5rem; }
+
+.notifiche-message {
+  padding: 0.75rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; margin-bottom: 1rem;
+  background: #f0fdf4; color: #10b981; border: 1px solid #bbf7d0;
+}
+
+.notifiche-empty {
+  text-align: center; padding: 3rem 1rem; background: #fff;
+  border: 2px dashed var(--gray-300, #d1d5db); border-radius: 0.75rem;
+}
+
+.notifiche-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+
+.notifica-item {
+  display: flex; align-items: flex-start; gap: 0.75rem;
+  padding: 1rem; background: #fff; border: 1px solid var(--gray-200, #e5e7eb);
+  border-radius: 0.5rem;
+}
+.notifica-item.non-letta {
+  border-left: 4px solid var(--primary-color, #4f46e5);
+  background: #f8fafc;
+}
+
+.notifica-icon { font-size: 1.4rem; flex-shrink: 0; }
+
+.notifica-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.25rem; }
+.notifica-titolo { font-weight: 600; color: #111827; font-size: 0.95rem; }
+.notifica-messaggio { color: #6b7280; font-size: 0.88rem; line-height: 1.4; }
+.notifica-meta { color: #9ca3af; font-size: 0.75rem; }
+
+.notifica-azioni { display: flex; flex-direction: column; gap: 0.4rem; flex-shrink: 0; }
+.notifica-btn {
+  padding: 0.45rem 0.9rem; border: none; border-radius: 0.5rem;
+  font-size: 0.82rem; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 150ms;
+}
+.notifica-btn.accetta { background: #dcfce7; color: #16a34a; }
+.notifica-btn.accetta:hover { background: #bbf7d0; }
+.notifica-btn.rifiuta { background: #fee2e2; color: #ef4444; }
+.notifica-btn.rifiuta:hover { background: #fecaca; }
+.notifica-btn.segna { background: #f3f4f6; color: #6b7280; }
+.notifica-btn.segna:hover { background: #e5e7eb; }
+
+.notifiche-loading { color: #6b7280; }
+
+@media (max-width: 767px) {
+  .notifiche-page { max-width: 100%; }
+  .notifiche-page h2 { font-size: 1.25rem; }
+  .notifica-item { flex-wrap: wrap; }
+  .notifica-azioni { flex-direction: row; }
+}

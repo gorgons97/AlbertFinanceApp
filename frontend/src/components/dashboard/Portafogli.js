@@ -38,6 +38,11 @@ const Portafogli = () => {
 
     const [deleteTarget, setDeleteTarget] = useState(null);
 
+    // Invito
+    const [inviteTarget, setInviteTarget] = useState(null);
+    const [inviteEmail, setInviteEmail] = useState('');
+    const [inviteMsg, setInviteMsg] = useState('');
+
     useEffect(() => { caricaPortafogli(); }, []);
 
     const caricaPortafogli = async () => {
@@ -119,6 +124,30 @@ const Portafogli = () => {
 
     const isGenerale = (pf) => pf.tipo === 'generale';
 
+    const apriInvito = (pf) => {
+        setInviteTarget(pf);
+        setInviteEmail('');
+        setInviteMsg('');
+    };
+
+    const inviaInvito = async (e) => {
+        e.preventDefault();
+        if (!inviteTarget || !inviteEmail.trim()) return;
+        try {
+            setInviteMsg('');
+            const res = await api.post(`/api/portafogli/${inviteTarget.id_portafoglio}/invita`, {
+                email: inviteEmail.trim(),
+            });
+            setInviteMsg(res.data.utente_esistente
+                ? `Invito inviato a ${inviteEmail.trim()}`
+                : `Invito creato per ${inviteEmail.trim()} (si attiverà alla registrazione)`);
+            setInviteEmail('');
+            setTimeout(() => { setInviteTarget(null); setInviteMsg(''); }, 2500);
+        } catch (err) {
+            setInviteMsg(err.response?.data?.detail || 'Errore durante l\'invito');
+        }
+    };
+
     if (loading) {
         return <div className="portafogli-page"><p className="portafogli-loading">Caricamento portafogli...</p></div>;
     }
@@ -198,10 +227,19 @@ const Portafogli = () => {
                                 <>
                                     <span className="pf-icon">{TIPI_ICONE[pf.tipo] || '👛'}</span>
                                     <span className="pf-name">{pf.nome}</span>
+                                    {pf.ruolo === 'cointestatario' && <span className="pf-ruolo-badge">condiviso</span>}
                                     <span className="pf-tipo-label">{TIPI_LABELS[pf.tipo] || pf.tipo}</span>
                                     <span className="pf-valore">{parseFloat(pf.valore).toFixed(2)} €</span>
                                     {!isGenerale(pf) && (
                                         <>
+                                            <button className="pf-invite-btn"
+                                                onClick={() => apriInvito(pf)} title={`Invita a ${pf.nome}`}>
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                                                    <circle cx="9" cy="7" r="4"/>
+                                                    <path d="M19 8v6M22 11h-6"/>
+                                                </svg>
+                                            </button>
                                             <button className="pf-edit-btn"
                                                 onClick={() => iniziaModifica(pf)} title={`Modifica ${pf.nome}`}>
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -227,6 +265,24 @@ const Portafogli = () => {
             <ConfirmModal isOpen={!!deleteTarget} title="Elimina portafoglio"
                 message={`Sei sicuro di voler eliminare "${deleteTarget?.nome}"? Questa azione non può essere annullata.`}
                 onConfirm={eseguiElimina} onCancel={() => setDeleteTarget(null)} />
+
+            {inviteTarget && (
+                <div className="modal-overlay" onClick={() => setInviteTarget(null)}>
+                    <div className="quickadd-modal" onClick={e => e.stopPropagation()}>
+                        <h3>Invita a "{inviteTarget.nome}"</h3>
+                        <form onSubmit={inviaInvito} className="quickadd-form">
+                            <input type="email" placeholder="Email della persona da invitare"
+                                value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} required />
+                            <div className="quickadd-actions">
+                                <button type="button" className="modal-btn modal-btn-cancel"
+                                    onClick={() => setInviteTarget(null)}>Annulla</button>
+                                <button type="submit" className="modal-btn modal-btn-primary">Invia invito</button>
+                            </div>
+                            {inviteMsg && <p className="quickadd-msg">{inviteMsg}</p>}
+                        </form>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
