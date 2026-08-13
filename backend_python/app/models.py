@@ -107,6 +107,7 @@ class Transazione(Base):
     id_portafoglio   = Column(Integer, ForeignKey("portafogli.id_portafoglio", ondelete="CASCADE"), nullable=False)
     id_categoria     = Column(Integer, ForeignKey("categorie.id_categoria", ondelete="RESTRICT"), nullable=False)
     tipo             = Column(SmallInteger, nullable=False, default=1)  # 1=spesa, 2=guadagno, 3=trasferimento
+    direzione        = Column(SmallInteger, nullable=False, default=1)  # 1=uscita (sottrae), 2=entrata (aggiunge)
     importo          = Column(Numeric(10, 2), nullable=False)
     descrizione      = Column(Text)
     data_transazione = Column(Date, default=func.current_date())

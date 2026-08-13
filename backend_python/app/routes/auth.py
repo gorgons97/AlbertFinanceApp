@@ -12,26 +12,35 @@ SECRET_KEY = "chiave-segreta-temporanea-da-spostare-in-env"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 ore
 
+router = APIRouter()
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__truncate_error=True)
+
+
 class UserCreate(BaseModel):
     nome: str
     cognome: str
     email: str
     password: str
 
+
 class Token(BaseModel):
     access_token: str
     token_type: str
+
 
 class LoginRequest(BaseModel):
     email: str
     password: str
 
+
 class ResetPasswordRequest(BaseModel):
     email: str
     new_password: str
 
-router = APIRouter()
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__truncate_error=True)
+
+class ChangePasswordRequest(BaseModel):
+    password_attuale: str
+    nuova_password: str
 
 
 def create_access_token(data: dict) -> str:
@@ -42,18 +51,32 @@ def create_access_token(data: dict) -> str:
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
+# Dipendenza per proteggere le route: estrae l'utente dal token JWT
+def get_current_user(authorization: str = Header(None), db: Session = Depends(get_db)) -> Utente:
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Token mancante")
+    token = authorization.split(" ")[1]
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = int(payload.get("sub"))
+    except (JWTError, ValueError, TypeError):
+        raise HTTPException(status_code=401, detail="Token non valido")
+
+    utente = db.query(Utente).filter(Utente.id_utente == user_id).first()
+    if not utente:
+        raise HTTPException(status_code=401, detail="Utente non trovato")
+    return utente
+
+
 # Endpoint per la registrazione
 @router.post("/registrazione", status_code=status.HTTP_201_CREATED)
 def registra_utente(user: UserCreate, db: Session = Depends(get_db)):
-    # Controlla se l'utente esiste gia'
     db_utente = db.query(Utente).filter(Utente.email == user.email).first()
     if db_utente:
         raise HTTPException(status_code=400, detail="Email gia' registrata")
 
-    # Hasher la password
     hashed_password = pwd_context.hash(user.password)
 
-    # Crea il nuovo utente e salvalo nel DB
     nuovo_utente = Utente(
         nome=user.nome, cognome=user.cognome,
         email=user.email, password_hash=hashed_password
@@ -69,7 +92,6 @@ def registra_utente(user: UserCreate, db: Session = Depends(get_db)):
     nuovo_utente.portafogli.append(portafoglio_generale)
     db.commit()
 
-    # Genera token JWT e lo restituisce subito (login automatico)
     token = create_access_token(data={"sub": str(nuovo_utente.id_utente)})
     return {
         "message": "Utente registrato con successo",
@@ -82,16 +104,13 @@ def registra_utente(user: UserCreate, db: Session = Depends(get_db)):
 # Endpoint per il login
 @router.post("/login", response_model=Token)
 def login_utente(login: LoginRequest, db: Session = Depends(get_db)):
-    # Trova l'utente per email
     utente = db.query(Utente).filter(Utente.email == login.email).first()
     if not utente:
         raise HTTPException(status_code=401, detail="Credenziali non valide")
 
-    # Verifica la password
     if not pwd_context.verify(login.password, utente.password_hash):
         raise HTTPException(status_code=401, detail="Credenziali non valide")
 
-    # Genera token JWT
     token = create_access_token(data={"sub": str(utente.id_utente)})
     return {
         "access_token": token,
@@ -114,18 +133,19 @@ def reset_password(data: ResetPasswordRequest, db: Session = Depends(get_db)):
     return {"message": "Password aggiornata con successo"}
 
 
-# Dipendenza per proteggere le route: estrae l'utente dal token JWT
-def get_current_user(authorization: str = Header(None), db: Session = Depends(get_db)) -> Utente:
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Token mancante")
-    token = authorization.split(" ")[1]
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id = int(payload.get("sub"))
-    except (JWTError, ValueError, TypeError):
-        raise HTTPException(status_code=401, detail="Token non valido")
+# Endpoint per cambiare la password (utente autenticato)
+@router.post("/change-password")
+def change_password(
+    data: ChangePasswordRequest,
+    user: Utente = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if not pwd_context.verify(data.password_attuale, user.password_hash):
+        raise HTTPException(status_code=400, detail="Password attuale non corretta")
 
-    utente = db.query(Utente).filter(Utente.id_utente == user_id).first()
-    if not utente:
-        raise HTTPException(status_code=401, detail="Utente non trovato")
-    return utente
+    if len(data.nuova_password) < 8:
+        raise HTTPException(status_code=400, detail="La nuova password deve avere almeno 8 caratteri")
+
+    user.password_hash = pwd_context.hash(data.nuova_password)
+    db.commit()
+    return {"message": "Password aggiornata con successo"}

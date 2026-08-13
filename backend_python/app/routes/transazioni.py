@@ -102,23 +102,23 @@ class TransazioneOut(BaseModel):
 
 
 def _aggiorna_saldo_portafoglio(db: Session, id_portafoglio: int, id_utente: int):
+    db.flush()  # applica modifiche pendenti (add/delete/update) prima del ricalcolo
     entrate = db.query(Transazione).filter(
         Transazione.id_portafoglio == id_portafoglio,
         Transazione.id_utente == id_utente,
-        Transazione.tipo == 2,
+        Transazione.direzione == 2,
         Transazione.nascosto == False,
     ).all()
     uscite = db.query(Transazione).filter(
         Transazione.id_portafoglio == id_portafoglio,
         Transazione.id_utente == id_utente,
-        Transazione.tipo.in_([1, 3]),
+        Transazione.direzione == 1,
         Transazione.nascosto == False,
     ).all()
     saldo = sum(float(t.importo) for t in entrate) - sum(float(t.importo) for t in uscite)
     pf = db.query(Portafoglio).filter(Portafoglio.id_portafoglio == id_portafoglio).first()
     if pf and pf.tipo != 1:
         pf.valore = round(saldo, 2)
-        db.commit()
 
 
 # ── Endpoints ──
@@ -185,9 +185,10 @@ def crea_transazione(data: TransazioneCreate, user: Utente = Depends(get_current
     if data.importo <= 0: raise HTTPException(400, "L'importo deve essere positivo")
 
     tipo_int = _tipo_int(data.tipo)
+    direzione = 1 if tipo_int == 1 else 2  # spesa=uscita, guadagno=entrata
     trans = Transazione(
         id_utente=user.id_utente, id_portafoglio=data.id_portafoglio,
-        id_categoria=data.id_categoria, tipo=tipo_int,
+        id_categoria=data.id_categoria, tipo=tipo_int, direzione=direzione,
         importo=round(data.importo, 2), descrizione=data.descrizione or "",
     )
     if data.data_transazione:
@@ -195,6 +196,7 @@ def crea_transazione(data: TransazioneCreate, user: Utente = Depends(get_current
 
     db.add(trans); db.flush()
     _aggiorna_saldo_portafoglio(db, data.id_portafoglio, user.id_utente)
+    db.commit()
     db.refresh(trans)
     return _transazione_to_out(trans)
 
@@ -218,6 +220,7 @@ def modifica_transazione(
     t.id_portafoglio = data.id_portafoglio
     t.id_categoria = data.id_categoria
     t.tipo = _tipo_int(data.tipo)
+    t.direzione = 1 if _tipo_int(data.tipo) == 1 else 2
     t.importo = round(data.importo, 2)
     t.descrizione = data.descrizione or ""
     if data.data_transazione:
@@ -255,11 +258,11 @@ def crea_trasferimento(data: TrasferimentoCreate, user: Utente = Depends(get_cur
     desc = data.descrizione or f"Trasferimento da {pf_orig.nome} a {pf_dest.nome}"
 
     uscita = Transazione(id_utente=user.id_utente, id_portafoglio=pf_orig.id_portafoglio,
-        id_categoria=cat_out.id_categoria, tipo=3, importo=importo, descrizione=desc)
+        id_categoria=cat_out.id_categoria, tipo=3, direzione=1, importo=importo, descrizione=desc)
     db.add(uscita); db.flush()
 
     entrata = Transazione(id_utente=user.id_utente, id_portafoglio=pf_dest.id_portafoglio,
-        id_categoria=cat_in.id_categoria, tipo=3, importo=importo, descrizione=desc,
+        id_categoria=cat_in.id_categoria, tipo=3, direzione=2, importo=importo, descrizione=desc,
         id_transazione_collegata=uscita.id_transazione)
     db.add(entrata); db.flush()
     uscita.id_transazione_collegata = entrata.id_transazione
@@ -278,10 +281,16 @@ def elimina_transazione(transazione_id: int, user: Utente = Depends(get_current_
     if t.id_utente != user.id_utente: raise HTTPException(403, "Non autorizzato")
 
     id_pf = t.id_portafoglio
+    id_pf_collegata = None
     if t.id_transazione_collegata:
         col = db.query(Transazione).filter(Transazione.id_transazione == t.id_transazione_collegata).first()
-        if col: db.delete(col)
+        if col:
+            id_pf_collegata = col.id_portafoglio
+            db.delete(col)
     db.delete(t)
+
     _aggiorna_saldo_portafoglio(db, id_pf, user.id_utente)
+    if id_pf_collegata is not None and id_pf_collegata != id_pf:
+        _aggiorna_saldo_portafoglio(db, id_pf_collegata, user.id_utente)
     db.commit()
     return {"message": "Transazione eliminata"}

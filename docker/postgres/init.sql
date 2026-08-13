@@ -60,6 +60,7 @@ CREATE TABLE transazioni (
     id_portafoglio INT NOT NULL,
     id_categoria INT NOT NULL,
     tipo SMALLINT NOT NULL DEFAULT 1,
+    direzione SMALLINT NOT NULL DEFAULT 1,
     importo NUMERIC(10, 2) NOT NULL,
     descrizione TEXT,
     data_transazione DATE NOT NULL DEFAULT CURRENT_DATE,

@@ -20,6 +20,10 @@ const Transazioni = () => {
     const [formImporto, setFormImporto] = useState('');
     const [formDescrizione, setFormDescrizione] = useState('');
 
+    // Trasferimento
+    const [formOrigine, setFormOrigine] = useState('');
+    const [formDestinazione, setFormDestinazione] = useState('');
+
     // Edit state
     const [editingId, setEditingId] = useState(null);
     const [editTipo, setEditTipo] = useState('spesa');
@@ -47,7 +51,11 @@ const Transazioni = () => {
             ]);
             setPortafogli(rPf.data);
             setCategorie(rCat.data);
-            if (rPf.data.length > 0) setFormPortafoglio(String(rPf.data[0].id_portafoglio));
+            if (rPf.data.length > 0) {
+                setFormPortafoglio(String(rPf.data[0].id_portafoglio));
+                setFormOrigine(String(rPf.data[0].id_portafoglio));
+                setFormDestinazione(String(rPf.data.length > 1 ? rPf.data[1].id_portafoglio : rPf.data[0].id_portafoglio));
+            }
             const cf = rCat.data.filter(c => c.tipo === 'spesa');
             if (cf.length > 0) setFormCategoria(String(cf[0].id_categoria));
             await caricaTransazioni();
@@ -105,6 +113,28 @@ const Transazioni = () => {
         } catch (err) { setError(err.response?.data?.detail || "Errore"); }
     };
 
+    const inviaTrasferimento = async (e) => {
+        e.preventDefault();
+        if (!formOrigine || !formDestinazione || !formImporto) return;
+        if (formOrigine === formDestinazione) {
+            setError('Origine e destinazione devono essere diversi');
+            return;
+        }
+        try {
+            setError('');
+            await api.post('/api/transazioni/trasferimento', {
+                id_portafoglio_origine: parseInt(formOrigine),
+                id_portafoglio_destinazione: parseInt(formDestinazione),
+                importo: parseFloat(formImporto),
+                descrizione: formDescrizione.trim(),
+            });
+            setFormImporto(''); setFormDescrizione('');
+            setSuccess('Trasferimento creato!');
+            setTimeout(() => setSuccess(''), 2500);
+            caricaTransazioni();
+        } catch (err) { setError(err.response?.data?.detail || 'Errore trasferimento'); }
+    };
+
     const iniziaModifica = (t) => {
         setEditingId(t.id_transazione);
         setEditTipo(t.tipo); setEditPfId(String(t.id_portafoglio));
@@ -147,28 +177,62 @@ const Transazioni = () => {
         <div className="transazioni-page">
             <h2>Transazioni</h2>
 
-            <form onSubmit={aggiungi} className="transazioni-form">
-                <div className="transazioni-form-row">
-                    <select className="transazioni-input transazioni-input-tipo" value={formTipo} onChange={e => handleTipoChange(e.target.value)}>
-                        <option value="spesa">💸 Spesa</option>
-                        <option value="guadagno">💰 Guadagno</option>
-                    </select>
-                    <select className="transazioni-input transazioni-input-portafoglio" value={formPortafoglio} onChange={e => setFormPortafoglio(e.target.value)}>
-                        {portafogli.map(p => <option key={p.id_portafoglio} value={p.id_portafoglio}>{p.nome}</option>)}
-                    </select>
-                    <input type="number" className="transazioni-input transazioni-input-importo" placeholder="0.00"
-                        value={formImporto} onChange={e => setFormImporto(e.target.value)} step="0.01" min="0.01" required />
+            <form onSubmit={formTipo === 'trasferimento' ? inviaTrasferimento : aggiungi} className="transazioni-form">
+                <div className="transazioni-tabs">
+                    {['spesa', 'guadagno', 'trasferimento'].map(t => (
+                        <button key={t} type="button"
+                            className={`transazioni-tab ${formTipo === t ? 'active' : ''}`}
+                            onClick={() => handleTipoChange(t)}>
+                            {TIPI_ICONE[t]} {TIPO_LABEL[t]}
+                        </button>
+                    ))}
                 </div>
-                <div className="transazioni-form-row">
-                    <select className="transazioni-input transazioni-input-categoria" value={formCategoria} onChange={e => setFormCategoria(e.target.value)}>
-                        {catDisp.map(c => <option key={c.id_categoria} value={c.id_categoria}>{c.nome}</option>)}
-                    </select>
-                    <input type="text" className="transazioni-input transazioni-input-descrizione" placeholder="Descrizione"
-                        value={formDescrizione} onChange={e => setFormDescrizione(e.target.value)} maxLength={200} />
-                    <button type="submit" className="transazioni-add-btn" title="Aggiungi">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
-                    </button>
-                </div>
+
+                {formTipo === 'trasferimento' ? (
+                    <>
+                        <div className="transazioni-form-row">
+                            <select className="transazioni-input transazioni-input-portafoglio" value={formOrigine}
+                                onChange={e => setFormOrigine(e.target.value)}>
+                                {portafogli.map(p => <option key={p.id_portafoglio} value={p.id_portafoglio}>Da: {p.nome}</option>)}
+                            </select>
+                            <select className="transazioni-input transazioni-input-portafoglio" value={formDestinazione}
+                                onChange={e => setFormDestinazione(e.target.value)}>
+                                {portafogli.map(p => <option key={p.id_portafoglio} value={p.id_portafoglio}>A: {p.nome}</option>)}
+                            </select>
+                            <input type="number" className="transazioni-input transazioni-input-importo" placeholder="0.00"
+                                value={formImporto} onChange={e => setFormImporto(e.target.value)} step="0.01" min="0.01" required />
+                        </div>
+                        <div className="transazioni-form-row">
+                            <input type="text" className="transazioni-input transazioni-input-descrizione" placeholder="Descrizione"
+                                value={formDescrizione} onChange={e => setFormDescrizione(e.target.value)} maxLength={200} />
+                            <button type="submit" className="transazioni-add-btn" title="Crea trasferimento">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                            </button>
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <div className="transazioni-form-row">
+                            <select className="transazioni-input transazioni-input-portafoglio" value={formPortafoglio}
+                                onChange={e => setFormPortafoglio(e.target.value)}>
+                                {portafogli.map(p => <option key={p.id_portafoglio} value={p.id_portafoglio}>{p.nome}</option>)}
+                            </select>
+                            <input type="number" className="transazioni-input transazioni-input-importo" placeholder="0.00"
+                                value={formImporto} onChange={e => setFormImporto(e.target.value)} step="0.01" min="0.01" required />
+                        </div>
+                        <div className="transazioni-form-row">
+                            <select className="transazioni-input transazioni-input-categoria" value={formCategoria}
+                                onChange={e => setFormCategoria(e.target.value)}>
+                                {catDisp.map(c => <option key={c.id_categoria} value={c.id_categoria}>{c.nome}</option>)}
+                            </select>
+                            <input type="text" className="transazioni-input transazioni-input-descrizione" placeholder="Descrizione"
+                                value={formDescrizione} onChange={e => setFormDescrizione(e.target.value)} maxLength={200} />
+                            <button type="submit" className="transazioni-add-btn" title="Aggiungi">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                            </button>
+                        </div>
+                    </>
+                )}
             </form>
 
             <div className="transazioni-filtri">

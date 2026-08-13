@@ -19,6 +19,29 @@
   margin-bottom: 1.25rem;
 }
 
+.transazioni-tabs {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.transazioni-tab {
+  flex: 1;
+  padding: 0.6rem;
+  border: 2px solid var(--gray-200, #e5e7eb);
+  border-radius: var(--radius-md, 0.5rem);
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-family: inherit;
+  transition: all 150ms;
+  white-space: nowrap;
+}
+.transazioni-tab.active {
+  border-color: var(--primary-color, #4f46e5);
+  background: #eef2ff;
+  color: var(--primary-color, #4f46e5);
+}
+
 .transazioni-form-row {
   display: flex;
   gap: 0.5rem;

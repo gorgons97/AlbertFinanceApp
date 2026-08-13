@@ -8,11 +8,17 @@ const Impostazioni = () => {
     const [result, setResult] = useState(null);
     const [error, setError] = useState('');
 
+    // Cambio password
+    const [pwAttuale, setPwAttuale] = useState('');
+    const [pwNuova, setPwNuova] = useState('');
+    const [pwConferma, setPwConferma] = useState('');
+    const [pwMsg, setPwMsg] = useState('');
+    const [pwOk, setPwOk] = useState(false);
+
     const handleImport = async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
         setImporting(true); setError(''); setResult(null);
-
         try {
             const formData = new FormData();
             formData.append('file', file);
@@ -40,6 +46,34 @@ const Impostazioni = () => {
             window.URL.revokeObjectURL(url);
         } catch (err) {
             setError('Errore durante l\'export');
+        }
+    };
+
+    const cambiaPassword = async (e) => {
+        e.preventDefault();
+        setPwMsg(''); setPwOk(false);
+        if (!pwAttuale || !pwNuova || !pwConferma) {
+            setPwMsg('Compila tutti i campi');
+            return;
+        }
+        if (pwNuova.length < 8) {
+            setPwMsg('La nuova password deve avere almeno 8 caratteri');
+            return;
+        }
+        if (pwNuova !== pwConferma) {
+            setPwMsg('Le password non coincidono');
+            return;
+        }
+        try {
+            const res = await api.post('/api/auth/change-password', {
+                password_attuale: pwAttuale,
+                nuova_password: pwNuova,
+            });
+            setPwMsg(res.data.message || 'Password aggiornata');
+            setPwOk(true);
+            setPwAttuale(''); setPwNuova(''); setPwConferma('');
+        } catch (err) {
+            setPwMsg(err.response?.data?.detail || 'Errore durante il cambio password');
         }
     };
 
@@ -89,6 +123,25 @@ const Impostazioni = () => {
                             <li>{result.totale_righe} righe processate</li>
                         </ul>
                     </div>
+                )}
+            </div>
+
+            <div className="impostazioni-section">
+                <h3>Cambia Password</h3>
+                <p className="impostazioni-desc">
+                    Aggiorna la password del tuo account.
+                </p>
+                <form onSubmit={cambiaPassword} className="password-form">
+                    <input type="password" placeholder="Password attuale"
+                        value={pwAttuale} onChange={e => setPwAttuale(e.target.value)} />
+                    <input type="password" placeholder="Nuova password (min 8 caratteri)"
+                        value={pwNuova} onChange={e => setPwNuova(e.target.value)} />
+                    <input type="password" placeholder="Conferma nuova password"
+                        value={pwConferma} onChange={e => setPwConferma(e.target.value)} />
+                    <button type="submit" className="backup-btn backup-btn-export">Aggiorna Password</button>
+                </form>
+                {pwMsg && (
+                    <div className={`impostazioni-message ${pwOk ? 'success' : 'error'}`}>{pwMsg}</div>
                 )}
             </div>
         </div>

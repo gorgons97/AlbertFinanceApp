@@ -36,6 +36,26 @@
 .impostazioni-message.success { background: #f0fdf4; color: #10b981; border: 1px solid #bbf7d0; }
 .impostazioni-message.success ul { margin: 0.5rem 0 0; padding-left: 1.25rem; }
 
+.password-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 360px;
+}
+.password-form input {
+  padding: 0.7rem 0.9rem;
+  border: 2px solid var(--gray-200, #e5e7eb);
+  border-radius: var(--radius-md, 0.5rem);
+  font-size: 0.95rem;
+  font-family: inherit;
+  background: #fff;
+  color: #111827;
+  outline: none;
+}
+.password-form input:focus {
+  border-color: var(--primary-color, #4f46e5);
+}
+
 @media (max-width: 767px) {
   .impostazioni-page { max-width: 100%; }
   .impostazioni-page h2 { font-size: 1.25rem; }
