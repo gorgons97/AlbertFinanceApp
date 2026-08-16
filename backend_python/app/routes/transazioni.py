@@ -80,6 +80,7 @@ class TrasferimentoCreate(BaseModel):
     id_portafoglio_destinazione: int
     importo: float
     descrizione: Optional[str] = ""
+    data_transazione: Optional[str] = None   
 
 
 class TransazioneOut(BaseModel):

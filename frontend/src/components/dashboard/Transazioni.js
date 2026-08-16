@@ -16,6 +16,7 @@ const Transazioni = () => {
 
     const [formTipo, setFormTipo] = useState('spesa');
     const [formPortafoglio, setFormPortafoglio] = useState('');
+    const [formData, setFormData] = useState(() => new Date().toISOString().split('T')[0]);
     const [formCategoria, setFormCategoria] = useState('');
     const [formImporto, setFormImporto] = useState('');
     const [formDescrizione, setFormDescrizione] = useState('');
@@ -77,6 +78,7 @@ const Transazioni = () => {
         if (f.data_fine) params.append('data_fine', f.data_fine);
         params.append('limit', '500');
         const res = await api.get(`/api/transazioni/?${params.toString()}`);
+        const sorted = res.data.sort((a, b) => new Date(b.data_transazione) - new Date(a.data_transazione));
         setTransazioni(res.data);
     };
 
@@ -103,12 +105,18 @@ const Transazioni = () => {
         try {
             setError('');
             const res = await api.post('/api/transazioni/', {
-                id_portafoglio: parseInt(formPortafoglio), id_categoria: parseInt(formCategoria),
-                tipo: formTipo, importo: parseFloat(formImporto), descrizione: formDescrizione.trim(),
+                id_portafoglio: parseInt(formPortafoglio), 
+                id_categoria: parseInt(formCategoria),
+                tipo: formTipo, 
+                importo: parseFloat(formImporto), 
+                descrizione: formDescrizione.trim(), 
+                data_transazione: formData, 
             });
             setTransazioni([res.data, ...transazioni]);
             setFormImporto(''); setFormDescrizione('');
+            setFormData(new Date().toISOString().split('T')[0]); 
             setSuccess('Transazione aggiunta!');
+            setTransazioni(prev => [res.data, ...prev].sort((a,b) => new Date(b.data_transazione) - new Date(a.data_transazione)));
             setTimeout(() => setSuccess(''), 2500);
         } catch (err) { setError(err.response?.data?.detail || "Errore"); }
     };
@@ -127,8 +135,10 @@ const Transazioni = () => {
                 id_portafoglio_destinazione: parseInt(formDestinazione),
                 importo: parseFloat(formImporto),
                 descrizione: formDescrizione.trim(),
+                data_transazione: formData,  
             });
             setFormImporto(''); setFormDescrizione('');
+            setFormData(new Date().toISOString().split('T')[0]); 
             setSuccess('Trasferimento creato!');
             setTimeout(() => setSuccess(''), 2500);
             caricaTransazioni();
@@ -155,6 +165,7 @@ const Transazioni = () => {
             setTransazioni(transazioni.map(t => t.id_transazione === id ? res.data : t));
             setEditingId(null);
             setSuccess('Transazione aggiornata!');
+            setTransazioni(prev => [res.data, ...prev].sort((a,b) => new Date(b.data_transazione) - new Date(a.data_transazione)));
             setTimeout(() => setSuccess(''), 2500);
         } catch (err) { setError(err.response?.data?.detail || 'Errore modifica'); }
     };
@@ -203,6 +214,8 @@ const Transazioni = () => {
                                 value={formImporto} onChange={e => setFormImporto(e.target.value)} step="0.01" min="0.01" required />
                         </div>
                         <div className="transazioni-form-row">
+                            <input type="date" className="transazioni-input transazioni-input-data"
+                                   value={formData} onChange={e => setFormData(e.target.value)} />
                             <input type="text" className="transazioni-input transazioni-input-descrizione" placeholder="Descrizione"
                                 value={formDescrizione} onChange={e => setFormDescrizione(e.target.value)} maxLength={200} />
                             <button type="submit" className="transazioni-add-btn" title="Crea trasferimento">
@@ -219,6 +232,8 @@ const Transazioni = () => {
                             </select>
                             <input type="number" className="transazioni-input transazioni-input-importo" placeholder="0.00"
                                 value={formImporto} onChange={e => setFormImporto(e.target.value)} step="0.01" min="0.01" required />
+                            <input type="date" className="transazioni-input transazioni-input-data"
+                                   value={formData} onChange={e => setFormData(e.target.value)} />
                         </div>
                         <div className="transazioni-form-row">
                             <select className="transazioni-input transazioni-input-categoria" value={formCategoria}

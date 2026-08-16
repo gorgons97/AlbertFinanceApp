@@ -70,6 +70,11 @@
 .transazioni-input-importo { flex: 0.8; min-width: 90px; }
 .transazioni-input-categoria { flex: 1; min-width: 120px; cursor: pointer; }
 .transazioni-input-descrizione { flex: 2; min-width: 130px; }
+.transazioni-input-data {
+  padding: 0.5rem 0.6rem; border: 1px solid var(--gray-200, #e5e7eb);
+  border-radius: 0.375rem; font-size: 0.85rem; font-family: inherit;
+  background: #fff; color: #111827; outline: none;
+}
 
 .transazioni-add-btn {
   width: 44px;
