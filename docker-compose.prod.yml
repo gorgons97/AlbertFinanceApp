@@ -47,7 +47,9 @@ services:
     build: ./frontend
     container_name: albert_frontend
     environment:
-      REACT_APP_API_BASE: /api
+      # Vuoto: le chiamate del frontend hanno già il prefisso /api e in HTTPS
+      # diventano same-origin -> nginx inoltra al backend.
+      REACT_APP_API_BASE: ""
     depends_on:
       - backend
     restart: unless-stopped
