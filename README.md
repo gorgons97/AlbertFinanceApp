@@ -36,3 +36,6 @@ React 19 · FastAPI · PostgreSQL 15 · Docker · SQLAlchemy · JWT
 ## Documentazione
 
 Per dettagli su architettura, schema DB, API e bug noti, vedi [ARCHITECTURE.md](./ARCHITECTURE.md).
+
+
+docker compose --env-file .env-vps -f docker-compose.prod.yml up -d --build

@@ -198,3 +198,5 @@ ufw enable
 Il frontend gira con il dev server webpack: accettabile per test, ma in produzione
 a lungo termine e' consigliato servire la build statica (`npm run build`) da nginx.
 ```
+
+docker compose --env-file .env-vps -f docker-compose.prod.yml up -d --build
