@@ -193,6 +193,25 @@ ufw deny 3001/tcp && ufw deny 8001/tcp
 ufw enable
 ```
 
+### Produzione (VPS) — file dedicati
+
+| File                     | Ruolo                                                        |
+|--------------------------|--------------------------------------------------------------|
+| `docker-compose.prod.yml`| Compose di produzione: nessuna porta pubblica per db/backend/frontend, servizio nginx incluso (80/443) |
+| `nginx/nginx.prod.conf`  | Config nginx con dominio + certificati Let's Encrypt (sostituire `TUODOMINIO.it`) |
+| `.env-vps.example`       | Template delle variabili per la VPS → copiare in `.env-vps` (mai committato) |
+
+Avvio in produzione:
+
+```bash
+cp .env-vps.example .env-vps          # poi modifica i valori
+# ottenere il certificato (prima di avviare nginx):
+docker run --rm -v /etc/letsencrypt:/etc/letsencrypt -p 80:80 \
+  certbot/certbot certonly --standalone -d TUODOMINIO.it \
+  --non-interactive --agree-tos -m TUOEMAIL@example.com
+docker compose --env-file .env-vps -f docker-compose.prod.yml up -d --build
+```
+
 ### Nota sicurezza
 
 Il frontend gira con il dev server webpack: accettabile per test, ma in produzione

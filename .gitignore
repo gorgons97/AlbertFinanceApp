@@ -27,6 +27,7 @@ frontend/build/
 .env.local
 .env-vps
 .env.*.local
+.env-vps
 
 # Database dumps
 *.sql.gz
