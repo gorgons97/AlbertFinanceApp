@@ -2,13 +2,17 @@ from fastapi import APIRouter, Depends, HTTPException, status, Header
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from datetime import datetime, timedelta
+import os
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from ..database import get_db
 from ..models import Utente, Portafoglio
 
 # Configurazione JWT
-SECRET_KEY = "chiave-segreta-temporanea-da-spostare-in-env"
+# In produzione SECRET_KEY va impostata come variabile d'ambiente (vedi docker-compose / .env):
+#   SECRET_KEY="una-stringa-lunga-e-casuale"
+# Il fallback serve solo per lo sviluppo locale.
+SECRET_KEY = os.environ.get("SECRET_KEY", "chiave-di-sviluppo-NON-usare-in-produzione")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 ore
 

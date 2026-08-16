@@ -31,6 +31,8 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://albert:AlbertPig2025!@db:5432/albert_app
+      SECRET_KEY: ${SECRET_KEY:-chiave-di-sviluppo-NON-usare-in-produzione}
+      CORS_ORIGINS: ${CORS_ORIGINS:-}
 
   frontend:
     build: ./frontend
@@ -43,6 +45,7 @@ services:
     environment:
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
+      - REACT_APP_API_BASE=${REACT_APP_API_BASE:-}
     depends_on:
       - backend
     restart: unless-stopped

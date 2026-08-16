@@ -154,4 +154,47 @@ Database: localhost:5433
 ```bash
 docker exec -it albert_db psql -U albert -d albert_app -p 5432
 ```
+
+---
+
+## Deploy in produzione (VPS + HTTPS)
+
+L'app e' pensata per girare dietro un reverse proxy (nginx) che termina TLS.
+I container restano su HTTP interno; e' nginx a cifrare il traffico.
+
+### Variabili d'ambiente (file `.env` nella root del progetto)
+
+| Variabile            | Descrizione                                                    | Default (dev)                        |
+|----------------------|----------------------------------------------------------------|--------------------------------------|
+| `SECRET_KEY`         | Chiave firma JWT — **obbligatoria in produzione**, lunga e casuale | chiave-di-sviluppo-NON-usare-in-produzione |
+| `CORS_ORIGINS`       | Origini consentite, virgola-separate (es. `https://albert.tuodominio.it`) | `*` (tutte, solo dev) |
+| `REACT_APP_API_BASE` | Override URL API del frontend (in produzione: `/api`)          | auto: `/api` se HTTPS, altrimenti `http://<host>:8001` |
+
+Esempio `.env` per la VPS:
+
+```
+SECRET_KEY=$(openssl rand -hex 32)
+CORS_ORIGINS=https://albert.tuodominio.it
+REACT_APP_API_BASE=/api
+```
+
+### Reverse proxy
+
+Config nginx completa in `deploy/nginx-vps.conf` (redirect HTTP->HTTPS, proxy
+frontend su 127.0.0.1:3001, proxy `/api` sul backend 127.0.0.1:8001, headers di
+sicurezza). Richiede un dominio (es. DuckDNS gratuito) + certificato Let's Encrypt
+(`certbot --nginx -d TUODOMINIO.it`).
+
+Dopo l'attivazione di nginx, chiudere le porte dirette dei container:
+
+```bash
+ufw allow 22/tcp && ufw allow 80/tcp && ufw allow 443/tcp
+ufw deny 3001/tcp && ufw deny 8001/tcp
+ufw enable
+```
+
+### Nota sicurezza
+
+Il frontend gira con il dev server webpack: accettabile per test, ma in produzione
+a lungo termine e' consigliato servire la build statica (`npm run build`) da nginx.
 ```

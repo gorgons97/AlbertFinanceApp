@@ -1,7 +1,12 @@
 import axios from 'axios';
 
-// Base URL dinamico: usa lo stesso host del frontend, porta 8001 per il backend
-const API_BASE = `http://${window.location.hostname}:8001`;
+// Base URL dell'API.
+// - In produzione (HTTPS dietro nginx) usa il percorso relativo "/api":
+//   nginx inoltra /api al backend sulla stessa origine -> niente mixed content.
+// - In sviluppo (HTTP) usa http://<host>:8001 direttamente.
+// - Override esplicito possibile con REACT_APP_API_BASE (es. /api).
+const API_BASE = process.env.REACT_APP_API_BASE
+    || (window.location.protocol === 'https:' ? '/api' : `http://${window.location.hostname}:8001`);
 
 const api = axios.create({
     baseURL: API_BASE,
