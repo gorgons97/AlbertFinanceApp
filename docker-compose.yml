@@ -50,5 +50,20 @@ services:
       - backend
     restart: unless-stopped
 
+  nginx:
+    image: nginx:latest
+    container_name: albert_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro       # per certificati self-signed (opzionale)
+      # - /etc/letsencrypt:/etc/letsencrypt:ro  # per Let's Encrypt (se usi certbot sull'host)
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+
 volumes:
   db_data:
