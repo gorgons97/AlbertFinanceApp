@@ -6,7 +6,7 @@ import axios from 'axios';
 // - In sviluppo (HTTP) usa http://<host>:8001 direttamente.
 // - Override esplicito possibile con REACT_APP_API_BASE (es. /api).
 const API_BASE = process.env.REACT_APP_API_BASE
-    || (window.location.protocol === 'https:' ? '/api' : `http://${window.location.hostname}:8001`);
+    || (window.location.protocol === 'https:' ? '' : `http://${window.location.hostname}:8001`);
 
 const api = axios.create({
     baseURL: API_BASE,
