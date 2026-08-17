@@ -157,13 +157,13 @@ async def importa_backup(
                 ).first()
                 if existing and existing in user.portafogli:
                     pf_dest = existing
-                    _debug(f"  riga {idx}: riuso portafoglio esistente '{nome_cat}' (id={pf.id_portafoglio})")
+                    _debug(f"  riga {idx}: riuso portafoglio esistente '{nome_cat}' (id={pf_dest.id_portafoglio})")
                 else:
                     pf_dest = Portafoglio(nome=nome_cat, valore=0, tipo=3)  # 3=conti default
-                    db.add(pf); db.flush()
-                    user.portafogli.append(pf)
+                    db.add(pf_dest); db.flush()
+                    user.portafogli.append(pf_dest)
                     created_pf += 1
-                    _debug(f"  riga {idx}: CREATO portafoglio '{nome_cat}' (id={pf.id_portafoglio})")
+                    _debug(f"  riga {idx}: CREATO portafoglio '{nome_cat}' (id={pf_dest.id_portafoglio})")
                 pf_cache[key_pf] = pf_dest
             pf_dest = pf_cache[key_pf]
 
@@ -171,7 +171,7 @@ async def importa_backup(
 
             cat = db.query(Categoria).filter(Categoria.nome == "Trasferimento in uscita", Categoria.tipo == 3).first()
             if not cat:
-                cat = Categoria(nome="Trasferimento in uscita", tipo=3); db.add(cat_out); db.flush()
+                cat = Categoria(nome="Trasferimento in uscita", tipo=3); db.add(cat); db.flush()
             
 
         # Data
@@ -203,7 +203,7 @@ async def importa_backup(
             direzione = 2
             cat = db.query(Categoria).filter(Categoria.nome == "Trasferimento in entrata", Categoria.tipo == 3).first()
             if not cat:
-                cat = Categoria(nome="Trasferimento in entrata", tipo=3); db.add(cat_in); db.flush()
+                cat = Categoria(nome="Trasferimento in entrata", tipo=3); db.add(cat); db.flush()
             # Transazione
             tr = Transazione(
                 id_utente=user.id_utente,
@@ -217,7 +217,7 @@ async def importa_backup(
             )
             db.add(tr)
 
-        created_tr += 1
+        created_tr += 2 if tipo_tr == 3 else 1
 
         # Stampa di debug ogni 200 righe (per non spammare il log)
         if idx % 200 == 0:
