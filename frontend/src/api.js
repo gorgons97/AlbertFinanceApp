@@ -1,10 +1,14 @@
 import axios from 'axios';
 
 // Base URL dell'API.
-// - In produzione (HTTPS dietro nginx) usa il percorso relativo "/api":
-//   nginx inoltra /api al backend sulla stessa origine -> niente mixed content.
-// - In sviluppo (HTTP) usa http://<host>:8001 direttamente.
-// - Override esplicito possibile con REACT_APP_API_BASE (es. /api).
+// Le chiamate nel codice usano già il prefisso "/api" (es. api.post('/api/auth/login')).
+// Quindi:
+// - In produzione (HTTPS dietro nginx) baseURL DEVE essere vuoto: le chiamate
+//   diventano same-origin "/api/..." -> nginx inoltra al backend.
+// - In sviluppo (HTTP) usa http://<host>:8001 -> le chiamate diventano
+//   http://<host>:8001/api/...
+// - Override esplicito con REACT_APP_API_BASE (es. http://host:8001). NON usare
+//   "/api" qui: raddoppierebbe il prefisso.
 const API_BASE = process.env.REACT_APP_API_BASE
     || (window.location.protocol === 'https:' ? '' : `http://${window.location.hostname}:8001`);
 
