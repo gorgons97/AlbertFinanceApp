@@ -10,7 +10,10 @@ e portafogli cointestati, completamente containerizzata con Docker.
 cd frontend && npm install && cd ..
 
 # 2. Avviare tutti i container
-docker-compose up --build
+docker compose up --build
+
+# 3 Avviare la produzione con LetsEncript
+docker compose --env-file .env-vps -f docker-compose.prod.yml up --build
 ```
 
 I servizi saranno disponibili su:
@@ -36,6 +39,3 @@ React 19 · FastAPI · PostgreSQL 15 · Docker · SQLAlchemy · JWT
 ## Documentazione
 
 Per dettagli su architettura, schema DB, API e bug noti, vedi [ARCHITECTURE.md](./ARCHITECTURE.md).
-
-
-docker compose --env-file .env-vps -f docker-compose.prod.yml up -d --build
