@@ -10,9 +10,13 @@ import Notifiche from './Notifiche';
 import './Dashboard.css';
 
 const PAGE_TITLES = {
-    dashboard: 'Dashboard', transazioni: 'Transazioni',
-    portafogli: 'Portafogli', categorie: 'Categorie', report: 'Report',
-    impostazioni: 'Impostazioni', notifiche: 'Notifiche',
+    dashboard: 'Dashboard', 
+    transazioni: 'Transazioni',
+    portafogli: 'Portafogli', 
+    categorie: 'Categorie', 
+    //report: 'Report',
+    impostazioni: 'Impostazioni', 
+    notifiche: 'Notifiche',
 };
 
 const TIPI_ICONE = { spesa: '💸', guadagno: '💰', trasferimento: '🔄' };
@@ -115,8 +119,10 @@ const QuickAddFAB = () => {
     const [categorie, setCategorie] = useState([]);
     const [tipo, setTipo] = useState('spesa');
     const [pfId, setPfId] = useState('');
+    const [pfIdDest, setPfIdDest] = useState('');   // portafoglio destinazione (solo per trasferimenti)
     const [catId, setCatId] = useState('');
     const [importo, setImporto] = useState('');
+    const [data, setData] = useState(() => new Date().toISOString().split('T')[0]);
     const [desc, setDesc] = useState('');
     const [msg, setMsg] = useState('');
 
@@ -133,7 +139,7 @@ const QuickAddFAB = () => {
         } catch { setMsg('Errore caricamento dati'); }
     };
 
-    const chiudi = () => { setOpen(false); setMsg(''); setImporto(''); setDesc(''); };
+    const chiudi = () => { setOpen(false); setMsg(''); setImporto(''); setData(''); setDesc(''); };
 
     const invia = async (e) => {
         e.preventDefault();
@@ -162,7 +168,7 @@ const QuickAddFAB = () => {
                         <h3>Nuova Transazione</h3>
                         <form onSubmit={invia} className="quickadd-form">
                             <div className="quickadd-tabs">
-                                {['spesa','guadagno'].map(t => (
+                                {['spesa','guadagno', 'trasferimento'].map(t => (
                                     <button key={t} type="button"
                                         className={`quickadd-tab ${tipo===t?'active':''}`}
                                         onClick={() => { setTipo(t); const cf=categorie.filter(c=>c.tipo===t); if(cf.length)setCatId(String(cf[0].id_categoria)); }}>
@@ -178,6 +184,8 @@ const QuickAddFAB = () => {
                             </select>
                             <input type="number" placeholder="Importo" value={importo}
                                 onChange={e => setImporto(e.target.value)} step="0.01" min="0.01" required />
+                            <input type="date" className="transazioni-input transazioni-input-data"
+                                   value={data} onChange={e => setData(e.target.value)} />
                             <input type="text" placeholder="Descrizione (opzionale)" value={desc}
                                 onChange={e => setDesc(e.target.value)} maxLength={200} />
                             <div className="quickadd-actions">
@@ -216,6 +224,16 @@ const DashboardHome = () => {
     const spese = transazioni.filter(t => t.tipo === 'spesa').reduce((a,t) => a + t.importo, 0);
     const entrate = transazioni.filter(t => t.tipo === 'guadagno').reduce((a,t) => a + t.importo, 0);
 
+    // Raggruppa per data
+    const grouped = transazioni.reduce((acc, t) => {
+        const date = t.data_transazione; // formato "YYYY-MM-DD"
+        if (!acc[date]) acc[date] = [];
+        acc[date].push(t);
+        return acc;
+    }, {});
+    // Ordina le date dalla più recente
+    const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
+
     if (loading) return <p className="dash-loading">Caricamento...</p>;
 
     return (
@@ -243,20 +261,35 @@ const DashboardHome = () => {
                     <p className="placeholder-hint">Usa il pulsante <strong>+</strong> per aggiungerne una.</p>
                 </div>
             ) : (
-                <ul className="transazioni-list dash-trans-list">
-                    {transazioni.map(t => (
-                        <li key={t.id_transazione} className="transazioni-item">
-                            <span className="tr-icon">{TIPI_ICONE[t.tipo] || '💳'}</span>
-                            <div className="tr-info">
-                                <span className="tr-desc">{t.descrizione || (t.tipo==='spesa'?'Spesa':'Guadagno')}</span>
-                                <span className="tr-meta">{t.nome_portafoglio} · {t.nome_categoria}</span>
+                <div className="transazioni-list dash-trans-list">
+                    {sortedDates.map(date => {
+                        const items = grouped[date];
+                        const dateObj = new Date(date + 'T00:00:00');
+                        const formattedDate = dateObj.toLocaleDateString('it-IT', {
+                            weekday: 'long',
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                        }).replace(/^\w/, c => c.toUpperCase());
+                        return (
+                            <div key={date} className="transazioni-group">
+                                <div className="transazioni-group-header">{formattedDate}</div>
+                                {items.map(t => (
+                                    <li key={t.id_transazione} className="transazioni-item">
+                                        <span className="tr-icon">{TIPI_ICONE[t.tipo] || '💳'}</span>
+                                        <div className="tr-info">
+                                            <span className="tr-desc">{t.descrizione || (t.tipo==='spesa'?'Spesa':'Guadagno')}</span>
+                                            <span className="tr-meta">{t.nome_portafoglio} · {t.nome_categoria} · {t.data_transazione} </span>
+                                        </div>
+                                        <span className={`tr-importo ${t.tipo==='guadagno'?'tr-importo-positivo':'tr-importo-negativo'}`}>
+                                            {t.tipo==='guadagno'?'+':'-'}{parseFloat(t.importo).toFixed(2)} €
+                                        </span>
+                                    </li>
+                                ))}
                             </div>
-                            <span className={`tr-importo ${t.tipo==='guadagno'?'tr-importo-positivo':'tr-importo-negativo'}`}>
-                                {t.tipo==='guadagno'?'+':'-'}{parseFloat(t.importo).toFixed(2)} €
-                            </span>
-                        </li>
-                    ))}
-                </ul>
+                        );
+                    })}
+                </div>
             )}
         </>
     );
