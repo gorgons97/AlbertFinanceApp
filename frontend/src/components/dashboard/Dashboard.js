@@ -191,6 +191,7 @@ const QuickAddFAB = () => {
                 id_categoria: parseInt(catId),
                 tipo,
                 importo: parseFloat(importo),
+                data_transazione: data,  
                 descrizione: desc.trim(),
             });
             chiudi();
