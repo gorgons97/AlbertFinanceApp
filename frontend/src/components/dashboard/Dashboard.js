@@ -14,7 +14,7 @@ const PAGE_TITLES = {
     transazioni: 'Transazioni',
     portafogli: 'Portafogli', 
     categorie: 'Categorie', 
-    //report: 'Report',
+    report: 'Report',
     impostazioni: 'Impostazioni', 
     notifiche: 'Notifiche',
 };
@@ -129,10 +129,18 @@ const QuickAddFAB = () => {
     const apri = async () => {
         try {
             const [rpf, rcat] = await Promise.all([
-                api.get('/api/portafogli/'), api.get('/api/categorie/'),
+                api.get('/api/portafogli/'),
+                api.get('/api/categorie/'),
             ]);
-            setPortafogli(rpf.data); setCategorie(rcat.data);
-            if (rpf.data.length > 0) setPfId(String(rpf.data[0].id_portafoglio));
+            setPortafogli(rpf.data);
+            setCategorie(rcat.data);
+            if (rpf.data.length > 0) {
+                setPfId(String(rpf.data[0].id_portafoglio));
+                // Per destinazione, se c'è un secondo portafoglio lo usiamo, altrimenti ripetiamo il primo
+                const dest = rpf.data.length > 1 ? rpf.data[1] : rpf.data[0];
+                setPfIdDest(String(dest.id_portafoglio));
+            }
+            // Imposta categoria predefinita in base al tipo
             const catF = rcat.data.filter(c => c.tipo === 'spesa');
             if (catF.length > 0) setCatId(String(catF[0].id_categoria));
             setOpen(true);
@@ -143,14 +151,53 @@ const QuickAddFAB = () => {
 
     const invia = async (e) => {
         e.preventDefault();
-        if (!pfId || !catId || !importo) return;
+        if (!pfId || !importo) return;
+
+        // Per i trasferimenti gestiamo due transazioni
+        if (tipo === 'trasferimento') {
+            if (!pfIdDest) {
+                setMsg('Seleziona il portafoglio di destinazione');
+                return;
+            }
+            // Cerchiamo una categoria di spesa e una di guadagno
+            const catSpesa = categorie.find(c => c.tipo === 'spesa');
+            const catGuadagno = categorie.find(c => c.tipo === 'guadagno');
+            if (!catSpesa || !catGuadagno) {
+                setMsg('Categorie per trasferimento non trovate');
+                return;
+            }
+            try {
+                // Crea la transazione di trasferimento 
+                await api.post('/api/transazioni/trasferimento', {
+                    id_portafoglio_origine: parseInt(pfId),
+                    id_portafoglio_destinazione: parseInt(pfIdDest),
+                    importo: parseFloat(importo),
+                    data_transazione: data,  
+                    descrizione: desc.trim() || 'Trasferimento',
+                });
+                chiudi();
+                window.location.reload();
+            } catch (err) {
+                setMsg(err.response?.data?.detail || 'Errore durante il trasferimento');
+            }
+            return;
+        }
+
+        // Per spesa/guadagno normale
+        if (!catId) return;
         try {
             await api.post('/api/transazioni/', {
-                id_portafoglio: parseInt(pfId), id_categoria: parseInt(catId),
-                tipo, importo: parseFloat(importo), descrizione: desc.trim(),
+                id_portafoglio: parseInt(pfId),
+                id_categoria: parseInt(catId),
+                tipo,
+                importo: parseFloat(importo),
+                descrizione: desc.trim(),
             });
-            chiudi(); window.location.reload();
-        } catch (err) { setMsg(err.response?.data?.detail || 'Errore'); }
+            chiudi();
+            window.location.reload();
+        } catch (err) {
+            setMsg(err.response?.data?.detail || 'Errore');
+        }
     };
 
     const catFiltrate = categorie.filter(c => c.tipo === tipo);
@@ -168,20 +215,48 @@ const QuickAddFAB = () => {
                         <h3>Nuova Transazione</h3>
                         <form onSubmit={invia} className="quickadd-form">
                             <div className="quickadd-tabs">
-                                {['spesa','guadagno', 'trasferimento'].map(t => (
+                                {['spesa','guadagno','trasferimento'].map(t => (
                                     <button key={t} type="button"
                                         className={`quickadd-tab ${tipo===t?'active':''}`}
-                                        onClick={() => { setTipo(t); const cf=categorie.filter(c=>c.tipo===t); if(cf.length)setCatId(String(cf[0].id_categoria)); }}>
-                                        {TIPI_ICONE[t]} {t==='spesa'?'Spesa':'Guadagno'}
+                                        onClick={() => {
+                                            setTipo(t);
+                                            // Quando cambio tipo, resetta i selettori se necessario
+                                            if (t === 'trasferimento') {
+                                                // Non serve categoria, ma manteniamo i portafogli
+                                            } else {
+                                                // Ripristina categoria filtrata
+                                                const cf = categorie.filter(c => c.tipo === t);
+                                                if (cf.length) setCatId(String(cf[0].id_categoria));
+                                            }
+                                        }}>
+                                        {TIPI_ICONE[t] || '💳'} {t==='spesa'?'Spesa':t==='guadagno'?'Guadagno':'Trasferimento'}
                                     </button>
                                 ))}
                             </div>
-                            <select value={pfId} onChange={e => setPfId(e.target.value)} required>
-                                {portafogli.map(p => <option key={p.id_portafoglio} value={p.id_portafoglio}>{p.nome}</option>)}
-                            </select>
-                            <select value={catId} onChange={e => setCatId(e.target.value)} required>
-                                {catFiltrate.map(c => <option key={c.id_categoria} value={c.id_categoria}>{c.nome}</option>)}
-                            </select>
+
+                            {/* Selezioni portafogli */}
+                            {tipo === 'trasferimento' ? (
+                                <>
+                                    <select value={pfId} onChange={e => setPfId(e.target.value)} required>
+                                        {portafogli.map(p => <option key={p.id_portafoglio} value={p.id_portafoglio}>{p.nome}</option>)}
+                                    </select>
+                                    <select value={pfIdDest} onChange={e => setPfIdDest(e.target.value)} required>
+                                        {portafogli.map(p => <option key={p.id_portafoglio} value={p.id_portafoglio}>{p.nome}</option>)}
+                                    </select>
+                                </>
+                            ) : (
+                                <select value={pfId} onChange={e => setPfId(e.target.value)} required>
+                                    {portafogli.map(p => <option key={p.id_portafoglio} value={p.id_portafoglio}>{p.nome}</option>)}
+                                </select>
+                            )}
+
+                            {/* Selezione categoria (solo per spesa/guadagno) */}
+                            {tipo !== 'trasferimento' && (
+                                <select value={catId} onChange={e => setCatId(e.target.value)} required>
+                                    {catFiltrate.map(c => <option key={c.id_categoria} value={c.id_categoria}>{c.nome}</option>)}
+                                </select>
+                            )}
+
                             <input type="number" placeholder="Importo" value={importo}
                                 onChange={e => setImporto(e.target.value)} step="0.01" min="0.01" required />
                             <input type="date" className="transazioni-input transazioni-input-data"
@@ -200,6 +275,7 @@ const QuickAddFAB = () => {
         </>
     );
 };
+
 
 /* Dashboard Home */
 const DashboardHome = () => {
