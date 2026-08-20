@@ -78,7 +78,7 @@ const Transazioni = () => {
         if (f.data_fine) params.append('data_fine', f.data_fine);
         params.append('limit', '500');
         const res = await api.get(`/api/transazioni/?${params.toString()}`);
-        const sorted = res.data.sort((a, b) => new Date(b.data_transazione) - new Date(a.data_transazione));
+        //const sorted = res.data.sort((a, b) => new Date(b.data_transazione) - new Date(a.data_transazione));
         setTransazioni(res.data);
     };
 
