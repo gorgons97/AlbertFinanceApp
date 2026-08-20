@@ -10,9 +10,13 @@ import Notifiche from './Notifiche';
 import './Dashboard.css';
 
 const PAGE_TITLES = {
-    dashboard: 'Dashboard', transazioni: 'Transazioni',
-    portafogli: 'Portafogli', categorie: 'Categorie', report: 'Report',
-    impostazioni: 'Impostazioni', notifiche: 'Notifiche',
+    dashboard: 'Dashboard', 
+    transazioni: 'Transazioni',
+    portafogli: 'Portafogli', 
+    categorie: 'Categorie', 
+    report: 'Report',
+    impostazioni: 'Impostazioni', 
+    notifiche: 'Notifiche',
 };
 
 const TIPI_ICONE = { spesa: '💸', guadagno: '💰', trasferimento: '🔄' };
@@ -115,36 +119,86 @@ const QuickAddFAB = () => {
     const [categorie, setCategorie] = useState([]);
     const [tipo, setTipo] = useState('spesa');
     const [pfId, setPfId] = useState('');
+    const [pfIdDest, setPfIdDest] = useState('');   // portafoglio destinazione (solo per trasferimenti)
     const [catId, setCatId] = useState('');
     const [importo, setImporto] = useState('');
+    const [data, setData] = useState(() => new Date().toISOString().split('T')[0]);
     const [desc, setDesc] = useState('');
     const [msg, setMsg] = useState('');
 
     const apri = async () => {
         try {
             const [rpf, rcat] = await Promise.all([
-                api.get('/api/portafogli/'), api.get('/api/categorie/'),
+                api.get('/api/portafogli/'),
+                api.get('/api/categorie/'),
             ]);
-            setPortafogli(rpf.data); setCategorie(rcat.data);
-            if (rpf.data.length > 0) setPfId(String(rpf.data[0].id_portafoglio));
+            setPortafogli(rpf.data);
+            setCategorie(rcat.data);
+            if (rpf.data.length > 0) {
+                setPfId(String(rpf.data[0].id_portafoglio));
+                // Per destinazione, se c'è un secondo portafoglio lo usiamo, altrimenti ripetiamo il primo
+                const dest = rpf.data.length > 1 ? rpf.data[1] : rpf.data[0];
+                setPfIdDest(String(dest.id_portafoglio));
+            }
+            // Imposta categoria predefinita in base al tipo
             const catF = rcat.data.filter(c => c.tipo === 'spesa');
             if (catF.length > 0) setCatId(String(catF[0].id_categoria));
             setOpen(true);
         } catch { setMsg('Errore caricamento dati'); }
     };
 
-    const chiudi = () => { setOpen(false); setMsg(''); setImporto(''); setDesc(''); };
+    const chiudi = () => { setOpen(false); setMsg(''); setImporto(''); setData(''); setDesc(''); };
 
     const invia = async (e) => {
         e.preventDefault();
-        if (!pfId || !catId || !importo) return;
+        if (!pfId || !importo) return;
+
+        // Per i trasferimenti gestiamo due transazioni
+        if (tipo === 'trasferimento') {
+            if (!pfIdDest) {
+                setMsg('Seleziona il portafoglio di destinazione');
+                return;
+            }
+            // Cerchiamo una categoria di spesa e una di guadagno
+            const catSpesa = categorie.find(c => c.tipo === 'spesa');
+            const catGuadagno = categorie.find(c => c.tipo === 'guadagno');
+            if (!catSpesa || !catGuadagno) {
+                setMsg('Categorie per trasferimento non trovate');
+                return;
+            }
+            try {
+                // Crea la transazione di trasferimento 
+                await api.post('/api/transazioni/trasferimento', {
+                    id_portafoglio_origine: parseInt(pfId),
+                    id_portafoglio_destinazione: parseInt(pfIdDest),
+                    importo: parseFloat(importo),
+                    data_transazione: data,  
+                    descrizione: desc.trim() || 'Trasferimento',
+                });
+                chiudi();
+                window.location.reload();
+            } catch (err) {
+                setMsg(err.response?.data?.detail || 'Errore durante il trasferimento');
+            }
+            return;
+        }
+
+        // Per spesa/guadagno normale
+        if (!catId) return;
         try {
             await api.post('/api/transazioni/', {
-                id_portafoglio: parseInt(pfId), id_categoria: parseInt(catId),
-                tipo, importo: parseFloat(importo), descrizione: desc.trim(),
+                id_portafoglio: parseInt(pfId),
+                id_categoria: parseInt(catId),
+                tipo,
+                importo: parseFloat(importo),
+                data_transazione: data,  
+                descrizione: desc.trim(),
             });
-            chiudi(); window.location.reload();
-        } catch (err) { setMsg(err.response?.data?.detail || 'Errore'); }
+            chiudi();
+            window.location.reload();
+        } catch (err) {
+            setMsg(err.response?.data?.detail || 'Errore');
+        }
     };
 
     const catFiltrate = categorie.filter(c => c.tipo === tipo);
@@ -162,22 +216,52 @@ const QuickAddFAB = () => {
                         <h3>Nuova Transazione</h3>
                         <form onSubmit={invia} className="quickadd-form">
                             <div className="quickadd-tabs">
-                                {['spesa','guadagno'].map(t => (
+                                {['spesa','guadagno','trasferimento'].map(t => (
                                     <button key={t} type="button"
                                         className={`quickadd-tab ${tipo===t?'active':''}`}
-                                        onClick={() => { setTipo(t); const cf=categorie.filter(c=>c.tipo===t); if(cf.length)setCatId(String(cf[0].id_categoria)); }}>
-                                        {TIPI_ICONE[t]} {t==='spesa'?'Spesa':'Guadagno'}
+                                        onClick={() => {
+                                            setTipo(t);
+                                            // Quando cambio tipo, resetta i selettori se necessario
+                                            if (t === 'trasferimento') {
+                                                // Non serve categoria, ma manteniamo i portafogli
+                                            } else {
+                                                // Ripristina categoria filtrata
+                                                const cf = categorie.filter(c => c.tipo === t);
+                                                if (cf.length) setCatId(String(cf[0].id_categoria));
+                                            }
+                                        }}>
+                                        {TIPI_ICONE[t] || '💳'} {t==='spesa'?'Spesa':t==='guadagno'?'Guadagno':'Trasferimento'}
                                     </button>
                                 ))}
                             </div>
-                            <select value={pfId} onChange={e => setPfId(e.target.value)} required>
-                                {portafogli.map(p => <option key={p.id_portafoglio} value={p.id_portafoglio}>{p.nome}</option>)}
-                            </select>
-                            <select value={catId} onChange={e => setCatId(e.target.value)} required>
-                                {catFiltrate.map(c => <option key={c.id_categoria} value={c.id_categoria}>{c.nome}</option>)}
-                            </select>
+
+                            {/* Selezioni portafogli */}
+                            {tipo === 'trasferimento' ? (
+                                <>
+                                    <select value={pfId} onChange={e => setPfId(e.target.value)} required>
+                                        {portafogli.map(p => <option key={p.id_portafoglio} value={p.id_portafoglio}>{p.nome}</option>)}
+                                    </select>
+                                    <select value={pfIdDest} onChange={e => setPfIdDest(e.target.value)} required>
+                                        {portafogli.map(p => <option key={p.id_portafoglio} value={p.id_portafoglio}>{p.nome}</option>)}
+                                    </select>
+                                </>
+                            ) : (
+                                <select value={pfId} onChange={e => setPfId(e.target.value)} required>
+                                    {portafogli.map(p => <option key={p.id_portafoglio} value={p.id_portafoglio}>{p.nome}</option>)}
+                                </select>
+                            )}
+
+                            {/* Selezione categoria (solo per spesa/guadagno) */}
+                            {tipo !== 'trasferimento' && (
+                                <select value={catId} onChange={e => setCatId(e.target.value)} required>
+                                    {catFiltrate.map(c => <option key={c.id_categoria} value={c.id_categoria}>{c.nome}</option>)}
+                                </select>
+                            )}
+
                             <input type="number" placeholder="Importo" value={importo}
                                 onChange={e => setImporto(e.target.value)} step="0.01" min="0.01" required />
+                            <input type="date" className="transazioni-input transazioni-input-data"
+                                   value={data} onChange={e => setData(e.target.value)} />
                             <input type="text" placeholder="Descrizione (opzionale)" value={desc}
                                 onChange={e => setDesc(e.target.value)} maxLength={200} />
                             <div className="quickadd-actions">
@@ -192,6 +276,7 @@ const QuickAddFAB = () => {
         </>
     );
 };
+
 
 /* Dashboard Home */
 const DashboardHome = () => {
@@ -215,6 +300,16 @@ const DashboardHome = () => {
 
     const spese = transazioni.filter(t => t.tipo === 'spesa').reduce((a,t) => a + t.importo, 0);
     const entrate = transazioni.filter(t => t.tipo === 'guadagno').reduce((a,t) => a + t.importo, 0);
+
+    // Raggruppa per data
+    const grouped = transazioni.reduce((acc, t) => {
+        const date = t.data_transazione; // formato "YYYY-MM-DD"
+        if (!acc[date]) acc[date] = [];
+        acc[date].push(t);
+        return acc;
+    }, {});
+    // Ordina le date dalla più recente
+    const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
 
     if (loading) return <p className="dash-loading">Caricamento...</p>;
 
@@ -243,20 +338,35 @@ const DashboardHome = () => {
                     <p className="placeholder-hint">Usa il pulsante <strong>+</strong> per aggiungerne una.</p>
                 </div>
             ) : (
-                <ul className="transazioni-list dash-trans-list">
-                    {transazioni.map(t => (
-                        <li key={t.id_transazione} className="transazioni-item">
-                            <span className="tr-icon">{TIPI_ICONE[t.tipo] || '💳'}</span>
-                            <div className="tr-info">
-                                <span className="tr-desc">{t.descrizione || (t.tipo==='spesa'?'Spesa':'Guadagno')}</span>
-                                <span className="tr-meta">{t.nome_portafoglio} · {t.nome_categoria}</span>
+                <div className="transazioni-list dash-trans-list">
+                    {sortedDates.map(date => {
+                        const items = grouped[date];
+                        const dateObj = new Date(date + 'T00:00:00');
+                        const formattedDate = dateObj.toLocaleDateString('it-IT', {
+                            weekday: 'long',
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                        }).replace(/^\w/, c => c.toUpperCase());
+                        return (
+                            <div key={date} className="transazioni-group">
+                                <div className="transazioni-group-header">{formattedDate}</div>
+                                {items.map(t => (
+                                    <li key={t.id_transazione} className="transazioni-item">
+                                        <span className="tr-icon">{TIPI_ICONE[t.tipo] || '💳'}</span>
+                                        <div className="tr-info">
+                                            <span className="tr-desc">{t.descrizione || (t.tipo==='spesa'?'Spesa':'Guadagno')}</span>
+                                            <span className="tr-meta">{t.nome_portafoglio} · {t.nome_categoria} · {t.data_transazione} </span>
+                                        </div>
+                                        <span className={`tr-importo ${t.tipo==='guadagno'?'tr-importo-positivo':'tr-importo-negativo'}`}>
+                                            {t.tipo==='guadagno'?'+':'-'}{parseFloat(t.importo).toFixed(2)} €
+                                        </span>
+                                    </li>
+                                ))}
                             </div>
-                            <span className={`tr-importo ${t.tipo==='guadagno'?'tr-importo-positivo':'tr-importo-negativo'}`}>
-                                {t.tipo==='guadagno'?'+':'-'}{parseFloat(t.importo).toFixed(2)} €
-                            </span>
-                        </li>
-                    ))}
-                </ul>
+                        );
+                    })}
+                </div>
             )}
         </>
     );

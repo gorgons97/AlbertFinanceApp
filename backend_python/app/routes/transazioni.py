@@ -258,13 +258,22 @@ def crea_trasferimento(data: TrasferimentoCreate, user: Utente = Depends(get_cur
     importo = round(data.importo, 2)
     desc = data.descrizione or f"Trasferimento da {pf_orig.nome} a {pf_dest.nome}"
 
+
     uscita = Transazione(id_utente=user.id_utente, id_portafoglio=pf_orig.id_portafoglio,
         id_categoria=cat_out.id_categoria, tipo=3, direzione=1, importo=importo, descrizione=desc)
+    
+    if data.data_transazione:
+        uscita.data_transazione = date_type.fromisoformat(data.data_transazione)
+
     db.add(uscita); db.flush()
 
     entrata = Transazione(id_utente=user.id_utente, id_portafoglio=pf_dest.id_portafoglio,
         id_categoria=cat_in.id_categoria, tipo=3, direzione=2, importo=importo, descrizione=desc,
         id_transazione_collegata=uscita.id_transazione)
+
+    if data.data_transazione:
+        entrata.data_transazione = date_type.fromisoformat(data.data_transazione)
+        
     db.add(entrata); db.flush()
     uscita.id_transazione_collegata = entrata.id_transazione
 

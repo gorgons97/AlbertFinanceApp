@@ -153,3 +153,18 @@
   .tr-desc { font-size: 0.85rem; }
   .tr-meta { font-size: 0.72rem; }
 }
+
+.transazioni-group {
+  margin-bottom: 1.5rem;
+}
+.transazioni-group-header {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--gray-700, #374151);
+  padding: 0.25rem 0 0.5rem 0;
+  border-bottom: 1px solid var(--gray-200, #e5e7eb);
+  margin-bottom: 0.75rem;
+}
+.transazioni-group .transazioni-item {
+  margin-bottom: 0.5rem;
+}
