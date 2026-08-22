@@ -6,7 +6,7 @@ from datetime import date as date_type, datetime
 from typing import Optional
 from ..database import get_db
 from ..models import (
-    Transazione, Portafoglio, Categoria, Utente,
+    Transazione, Portafoglio, Categoria, Utente, utenti_portafogli,
     TIPO_TRANSAZIONE, TIPO_TRANSAZIONE_REV, TIPO_PORTAFOGLIO,
 )
 from .auth import get_current_user
@@ -135,8 +135,11 @@ def lista_transazioni(
     data_fine: Optional[str] = Query(None, description="YYYY-MM-DD"),
     limit: int = Query(100, ge=1, le=500),
 ):
+    # 1. Recupera gli ID dei portafogli dell'utente
+    portafogli_ids = [pf.id_portafoglio for pf in user.portafogli]
+
     query = db.query(Transazione).filter(
-        Transazione.id_utente == user.id_utente,
+        Transazione.id_portafoglio.in_(portafogli_ids),
         Transazione.nascosto == False,
     )
     if tipo and tipo in TIPI_VALIDI:
