@@ -173,3 +173,14 @@
   .tr-meta { font-size: 0.72rem; }
   .tr-importo { font-size: 0.9rem; }
 }
+
+.tr-nome-utente {
+  font-size: 0.72rem;
+  color: #7c3aed;
+  background: #ede9fe;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-transform: uppercase; 
+}

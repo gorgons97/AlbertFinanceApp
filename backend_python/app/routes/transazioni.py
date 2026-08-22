@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 from pydantic import BaseModel, validator
 from decimal import Decimal
 from datetime import date as date_type, datetime
@@ -24,7 +25,20 @@ def _tipo_int(tipo_str: str) -> int:
     return TIPO_TRANSAZIONE_REV.get(tipo_str, 1)
 
 
-def _transazione_to_out(t: Transazione) -> dict:
+def _get_nome_utente_condiviso(db: Session, id_utente: int, id_utente_login: int) -> Optional[str]:
+    "Restituisce il nome dell'utente di una transazione condivisa"
+
+    if id_utente is None or id_utente == id_utente_login:
+        return None
+
+    return db.execute(
+        select(Utente.nome).where(
+            Utente.id_utente == id_utente,
+        )
+    ).scalar()
+
+
+def _transazione_to_out(t: Transazione, nome_utente: Optional[str] = None) -> dict:
     nome_pf = t.portafoglio.nome if t.portafoglio else ""
     nome_cat = t.categoria.nome if t.categoria else ""
     return {
@@ -42,6 +56,7 @@ def _transazione_to_out(t: Transazione) -> dict:
         "nascosto": t.nascosto or False,
         "link_allegato": t.link_allegato or "",
         "id_transazione_collegata": t.id_transazione_collegata,
+        "nome_utente": nome_utente,
     }
 
 
@@ -98,6 +113,7 @@ class TransazioneOut(BaseModel):
     nascosto: bool
     link_allegato: str
     id_transazione_collegata: Optional[int] = None
+    nome_utente: Optional[str] = None  
 
     class Config: orm_mode = True
 
@@ -175,7 +191,7 @@ def lista_transazioni(
         Transazione.data_transazione.desc(),
         Transazione.ora_transazione.desc()
     ).limit(limit).all()
-    return [_transazione_to_out(t) for t in transazioni]
+    return [_transazione_to_out(t, _get_nome_utente_condiviso(db, t.id_utente, user.id_utente)) for t in transazioni]
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=TransazioneOut)
@@ -202,7 +218,7 @@ def crea_transazione(data: TransazioneCreate, user: Utente = Depends(get_current
     _aggiorna_saldo_portafoglio(db, data.id_portafoglio, user.id_utente)
     db.commit()
     db.refresh(trans)
-    return _transazione_to_out(trans)
+    return _transazione_to_out(trans, _get_nome_utente_condiviso(db, trans.id_utente, user.id_utente))
 
 
 @router.put("/{transazione_id}", response_model=TransazioneOut)
@@ -234,7 +250,7 @@ def modifica_transazione(
     if old_pf != data.id_portafoglio:
         _aggiorna_saldo_portafoglio(db, old_pf, user.id_utente)
     db.commit(); db.refresh(t)
-    return _transazione_to_out(t)
+    return _transazione_to_out(t, _get_nome_utente_condiviso(db, t.id_utente, user.id_utente))
 
 
 @router.post("/trasferimento", status_code=status.HTTP_201_CREATED)
@@ -284,7 +300,7 @@ def crea_trasferimento(data: TrasferimentoCreate, user: Utente = Depends(get_cur
     _aggiorna_saldo_portafoglio(db, pf_dest.id_portafoglio, user.id_utente)
     db.commit(); db.refresh(uscita); db.refresh(entrata)
 
-    return {"message": "Trasferimento creato", "uscita": _transazione_to_out(uscita), "entrata": _transazione_to_out(entrata)}
+    return {"message": "Trasferimento creato", "uscita": _transazione_to_out(uscita, _get_nome_utente_condiviso(db, uscita.id_utente, user.id_utente)), "entrata": _transazione_to_out(entrata, _get_nome_utente_condiviso(db, entrata.id_utente, user.id_utente))}
 
 
 @router.delete("/{transazione_id}")
