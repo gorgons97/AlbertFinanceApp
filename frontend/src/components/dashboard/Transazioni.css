@@ -161,17 +161,15 @@
 }
 .transazioni-filter-reset:hover { background: var(--gray-200, #e5e7eb); }
 
-/* Mobile */
-@media (max-width: 767px) {
-  .transazioni-page { max-width: 100%; }
-  .transazioni-page h2 { font-size: 1.25rem; }
-  .transazioni-form-row { flex-direction: column; }
-  .transazioni-input { width: 100%; min-width: 0; }
-  .transazioni-add-btn { width: 100%; }
-  .transazioni-item { padding: 0.75rem 0.85rem; gap: 0.4rem; }
-  .tr-desc { font-size: 0.85rem; }
-  .tr-meta { font-size: 0.72rem; }
-  .tr-importo { font-size: 0.9rem; }
+.tr-nome-utente {
+  font-size: 0.72rem;
+  color: #7c3aed;
+  background: #ede9fe;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  text-transform: uppercase; 
 }
 
 .tr-nome-utente {
@@ -183,4 +181,33 @@
   white-space: nowrap;
   flex-shrink: 0;
   text-transform: uppercase; 
+  width: 15%;
+  display: flex;           
+  align-items: center;
+  justify-content: center; 
+}
+
+.tr-coda {
+  width: 15%;
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.tr-coda button {
+  flex-shrink: 0;           /* evita che i bottoni si restringano */
+}
+
+/* Mobile */
+@media (max-width: 767px) {
+  .transazioni-page { max-width: 100%; }
+  .transazioni-page h2 { font-size: 1.25rem; }
+  .transazioni-form-row { flex-direction: column; }
+  .transazioni-input { width: 100%; min-width: 0; }
+  .transazioni-add-btn { width: 100%; }
+  .transazioni-item { padding: 0.75rem 0.85rem; gap: 0.4rem; }
+  .tr-desc { font-size: 0.85rem; }
+  .tr-meta { font-size: 0.72rem; }
+  .tr-importo { font-size: 0.9rem; }
 }
