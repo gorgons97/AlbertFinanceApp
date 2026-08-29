@@ -36,10 +36,13 @@ const Transazioni = () => {
     const [deleteTarget, setDeleteTarget] = useState(null);
 
     // Filtri
+    const meseCorrente = new Date().toISOString().slice(0, 7);
     const [filterTipo, setFilterTipo] = useState('');
     const [filterPortafoglio, setFilterPortafoglio] = useState('');
+    const [filterCategoria, setFilterCategoria] = useState('');
     const [filterDataInizio, setFilterDataInizio] = useState('');
     const [filterDataFine, setFilterDataFine] = useState('');
+    const [filterMese, setMese] = useState(meseCorrente);
 
     useEffect(() => { caricaDati(); }, []);
 
@@ -69,13 +72,19 @@ const Transazioni = () => {
         const f = {
             tipo: filtri.tipo !== undefined ? filtri.tipo : filterTipo,
             id_portafoglio: filtri.id_portafoglio !== undefined ? filtri.id_portafoglio : filterPortafoglio,
+            id_categoria: filtri.id_categoria !== undefined ? filtri.id_categoria : filterCategoria,
             data_inizio: filtri.data_inizio !== undefined ? filtri.data_inizio : filterDataInizio,
             data_fine: filtri.data_fine !== undefined ? filtri.data_fine : filterDataFine,
+            mese: filtri.mese !== undefined ? filtri.mese : filterMese
         };
+        console.log(filterDataInizio)
+        console.log(filterDataFine)
         if (f.tipo) params.append('tipo', f.tipo);
         if (f.id_portafoglio) params.append('id_portafoglio', f.id_portafoglio);
+        if (f.id_categoria) params.append('id_categoria', f.id_categoria);
         if (f.data_inizio) params.append('data_inizio', f.data_inizio);
         if (f.data_fine) params.append('data_fine', f.data_fine);
+        if (f.mese) params.append('mese', f.mese);
         params.append('limit', '500');
         const res = await api.get(`/api/transazioni/?${params.toString()}`);
         setTransazioni(res.data);
@@ -84,8 +93,10 @@ const Transazioni = () => {
     const resetFiltri = () => {
         setFilterTipo('');
         setFilterPortafoglio('');
+        setFilterCategoria('');
         setFilterDataInizio('');
         setFilterDataFine('');
+        setMese(meseCorrente);
         caricaTransazioni({ tipo: '', id_portafoglio: '', data_inizio: '', data_fine: '' });
     };
 
@@ -255,25 +266,58 @@ const Transazioni = () => {
             </form>
 
             <div className="transazioni-filtri">
-                <select className="transazioni-filter-input" value={filterTipo}
-                    onChange={e => { setFilterTipo(e.target.value); caricaTransazioni({ tipo: e.target.value }); }}>
-                    <option value="">Tutti i tipi</option>
-                    <option value="spesa">💸 Spese</option>
-                    <option value="guadagno">💰 Guadagni</option>
-                    <option value="trasferimento">🔄 Trasferimenti</option>
-                </select>
-                <select className="transazioni-filter-input" value={filterPortafoglio}
-                    onChange={e => { setFilterPortafoglio(e.target.value); caricaTransazioni({ id_portafoglio: e.target.value }); }}>
-                    <option value="">Tutti i portafogli</option>
-                    {portafogli.map(p => <option key={p.id_portafoglio} value={p.id_portafoglio}>{p.nome}</option>)}
-                </select>
-                <input type="date" className="transazioni-filter-input" value={filterDataInizio}
-                    onChange={e => { setFilterDataInizio(e.target.value); caricaTransazioni({ data_inizio: e.target.value }); }} />
-                <input type="date" className="transazioni-filter-input" value={filterDataFine}
-                    onChange={e => { setFilterDataFine(e.target.value); caricaTransazioni({ data_fine: e.target.value }); }} />
-                <button className="transazioni-filter-reset" onClick={resetFiltri} title="Azzera filtri">
-                    ✕
-                </button>
+                <div className="transazioni-filtri-header">
+                    <span className="transazioni-filtri-title">🔍 Filtri</span>
+                    <button className="transazioni-filter-reset" onClick={resetFiltri} title="Azzera filtri">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+                        </svg>
+                        Azzera
+                    </button>
+                </div>
+                <div className="transazioni-filtri-grid">
+                    <label className="transazioni-filter-field">
+                        <span className="transazioni-filter-label">Tipo</span>
+                        <select className="transazioni-filter-input" value={filterTipo}
+                            onChange={e => { setFilterTipo(e.target.value); caricaTransazioni({ tipo: e.target.value }); }}>
+                            <option value="">Tutti i tipi</option>
+                            <option value="spesa">💸 Spese</option>
+                            <option value="guadagno">💰 Guadagni</option>
+                            <option value="trasferimento">🔄 Trasferimenti</option>
+                        </select>
+                    </label>
+                    <label className="transazioni-filter-field">
+                        <span className="transazioni-filter-label">Portafoglio</span>
+                        <select className="transazioni-filter-input" value={filterPortafoglio}
+                            onChange={e => { setFilterPortafoglio(e.target.value); caricaTransazioni({ id_portafoglio: e.target.value }); }}>
+                            <option value="">Tutti</option>
+                            {portafogli.map(p => <option key={p.id_portafoglio} value={p.id_portafoglio}>{p.nome}</option>)}
+                        </select>
+                    </label>
+                    <label className="transazioni-filter-field">
+                        <span className="transazioni-filter-label">Categoria</span>
+                        <select className="transazioni-filter-input" value={filterCategoria}
+                            onChange={e => { setFilterCategoria(e.target.value); caricaTransazioni({ id_categoria: e.target.value }); }}>
+                            <option value="">Tutte</option>
+                            {categorie.map(c => <option key={c.id_categoria} value={c.id_categoria}>{TIPI_ICONE[c.tipo] || ''} {c.nome}</option>)}
+                        </select>
+                    </label>
+                    <label className="transazioni-filter-field">
+                        <span className="transazioni-filter-label">Mese</span>
+                        <input type="month" className="transazioni-filter-input" value={filterMese}
+                            onChange={e => { setMese(e.target.value); caricaTransazioni({ mese: e.target.value }); }} />
+                    </label>
+                    <label className="transazioni-filter-field">
+                        <span className="transazioni-filter-label">Dal</span>
+                        <input type="date" className="transazioni-filter-input" value={filterDataInizio}
+                            onChange={e => { setFilterDataInizio(e.target.value); setMese(''); caricaTransazioni({ data_inizio: e.target.value }); }} />
+                    </label>
+                    <label className="transazioni-filter-field">
+                        <span className="transazioni-filter-label">Al</span>
+                        <input type="date" className="transazioni-filter-input" value={filterDataFine}
+                            onChange={e => { setFilterDataFine(e.target.value); setMese(''); caricaTransazioni({ data_fine: e.target.value }); }} />
+                    </label>
+                </div>
             </div>
 
             {error && <div className="transazioni-message error">{error}</div>}
