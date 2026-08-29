@@ -6,7 +6,7 @@ const menuItems = [
     { id: 'transazioni',  icon: '💳', label: 'Transazioni' },
     { id: 'portafogli',   icon: '👛', label: 'Portafogli' },
     { id: 'categorie',    icon: '🏷️',  label: 'Categorie' },
-    //{ id: 'report',       icon: '📈', label: 'Report' },
+    { id: 'report',       icon: '📈', label: 'Report' },
 ];
 
 const bottomItems = [

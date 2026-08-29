@@ -5,6 +5,7 @@ import Sidebar from './Sidebar';
 import Categorie from './Categorie';
 import Portafogli from './Portafogli';
 import Transazioni from './Transazioni';
+import Report from './Report';
 import Impostazioni from './Impostazioni';
 import Notifiche from './Notifiche';
 import './Dashboard.css';
@@ -69,6 +70,7 @@ const Dashboard = () => {
             case 'categorie':     return <Categorie />;
             case 'portafogli':    return <Portafogli />;
             case 'transazioni':   return <Transazioni />;
+            case 'report':        return <Report />;
             case 'impostazioni':  return <Impostazioni />;
             case 'notifiche':     return <Notifiche onCambio={setNonLette} />;
             case 'dashboard':

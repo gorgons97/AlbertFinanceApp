@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, func
 from pydantic import BaseModel, validator
 from decimal import Decimal
 from datetime import date as date_type, datetime
@@ -192,6 +192,138 @@ def lista_transazioni(
         Transazione.ora_transazione.desc()
     ).limit(limit).all()
     return [_transazione_to_out(t, _get_nome_utente_condiviso(db, t.id_utente, user.id_utente)) for t in transazioni]
+
+
+@router.get("/report")
+def report_transazioni(
+    user: Utente = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    mese: Optional[str] = Query(None, description="YYYY-MM (default: mese corrente)"),
+    data_inizio: Optional[str] = Query(None, description="YYYY-MM-DD"),
+    data_fine: Optional[str] = Query(None, description="YYYY-MM-DD"),
+    id_portafoglio: Optional[int] = Query(None, description="Filtra per portafoglio"),
+    id_categoria: Optional[int] = Query(None, description="Filtra per categoria"),
+    tipo: Optional[str] = Query(None, description="spesa/guadagno/trasferimento"),
+):
+    """Report aggregato: spese/entrate per categoria, per mese e per portafoglio."""
+    portafogli_ids = [pf.id_portafoglio for pf in user.portafogli]
+
+    def _filtra(q):
+        q = q.filter(
+            Transazione.id_portafoglio.in_(portafogli_ids),
+            Transazione.nascosto == False,
+        )
+        if tipo and tipo in TIPI_VALIDI:
+            q = q.filter(Transazione.tipo == _tipo_int(tipo))
+        if id_portafoglio:
+            q = q.filter(Transazione.id_portafoglio == id_portafoglio)
+        if id_categoria:
+            q = q.filter(Transazione.id_categoria == id_categoria)
+        if data_inizio:
+            try: q = q.filter(Transazione.data_transazione >= date_type.fromisoformat(data_inizio))
+            except ValueError: pass
+        if data_fine:
+            try: q = q.filter(Transazione.data_transazione <= date_type.fromisoformat(data_fine))
+            except ValueError: pass
+        if mese:
+            try:
+                anno, m = map(int, mese.split('-'))
+                inizio = date_type(anno, m, 1)
+                fine = date_type(anno + 1, 1, 1) if m == 12 else date_type(anno, m + 1, 1)
+                q = q.filter(Transazione.data_transazione >= inizio,
+                             Transazione.data_transazione < fine)
+            except (ValueError, IndexError):
+                pass
+        return q
+
+    # ── Totali spese/entrate (escludendo i trasferimenti interni) ──
+    q_tot = _filtra(db.query(
+        Transazione.tipo,
+        func.coalesce(func.sum(Transazione.importo), 0),
+    ))
+    righe_tot = {r[0]: float(r[1]) for r in q_tot.group_by(Transazione.tipo).all()}
+    spese = round(righe_tot.get(1, 0.0), 2)
+    entrate = round(righe_tot.get(2, 0.0), 2)
+
+    # ── Per categoria (nome + importo, per tipo) ──
+    q_cat = _filtra(db.query(
+        Categoria.nome, Transazione.tipo,
+        func.coalesce(func.sum(Transazione.importo), 0),
+    )).join(Categoria, Transazione.id_categoria == Categoria.id_categoria)
+    per_categoria = []
+    for nome, t, imp in q_cat.group_by(Categoria.nome, Transazione.tipo).all():
+        per_categoria.append({"nome": nome, "tipo": _tipo_str(t), "importo": round(float(imp), 2)})
+    # percentuale del peso rispetto al totale del proprio tipo (spesa o guadagno)
+    for c in per_categoria:
+        tot = entrate if c["tipo"] == "guadagno" else spese
+        c["percentuale"] = round((c["importo"] / tot * 100), 1) if tot else 0.0
+    per_categoria.sort(key=lambda x: -x["importo"])
+
+    # ── Per mese (trend). Se è selezionato un mese unico, mostra gli ultimi 6 mesi ──
+    if mese:
+        try:
+            anno, m = map(int, mese.split('-'))
+            # finestra: 5 mesi prima del mese selezionato
+            mese_idx = anno * 12 + (m - 1)
+            inizio_trend = date_type((mese_idx - 5) // 12, (mese_idx - 5) % 12 + 1, 1)
+            fine_trend = date_type((mese_idx + 1) // 12, (mese_idx + 1) % 12 + 1, 1) if mese_idx % 12 == 11 else date_type((mese_idx + 1) // 12, (mese_idx + 1) % 12 + 1, 1)
+            q_mese = db.query(
+                func.to_char(Transazione.data_transazione, 'YYYY-MM').label('mese'),
+                Transazione.tipo,
+                func.coalesce(func.sum(Transazione.importo), 0),
+            ).filter(
+                Transazione.id_portafoglio.in_(portafogli_ids),
+                Transazione.nascosto == False,
+                Transazione.data_transazione >= inizio_trend,
+                Transazione.data_transazione < fine_trend,
+            )
+            if id_portafoglio:
+                q_mese = q_mese.filter(Transazione.id_portafoglio == id_portafoglio)
+            if id_categoria:
+                q_mese = q_mese.filter(Transazione.id_categoria == id_categoria)
+            if tipo and tipo in TIPI_VALIDI:
+                q_mese = q_mese.filter(Transazione.tipo == _tipo_int(tipo))
+            per_mese_raw = q_mese.group_by('mese', Transazione.tipo).all()
+            per_mese = {}
+            for ms, t, imp in per_mese_raw:
+                d = per_mese.setdefault(ms, {"mese": ms, "spese": 0.0, "entrate": 0.0})
+                if t == 1: d["spese"] = round(float(imp), 2)
+                elif t == 2: d["entrate"] = round(float(imp), 2)
+            per_mese = [per_mese[k] for k in sorted(per_mese.keys())]
+        except (ValueError, IndexError):
+            per_mese = []
+    else:
+        q_mese = _filtra(db.query(
+            func.to_char(Transazione.data_transazione, 'YYYY-MM').label('mese'),
+            Transazione.tipo,
+            func.coalesce(func.sum(Transazione.importo), 0),
+        ))
+        per_mese_raw = q_mese.group_by('mese', Transazione.tipo).all()
+        per_mese = {}
+        for ms, t, imp in per_mese_raw:
+            d = per_mese.setdefault(ms, {"mese": ms, "spese": 0.0, "entrate": 0.0})
+            if t == 1: d["spese"] = round(float(imp), 2)
+            elif t == 2: d["entrate"] = round(float(imp), 2)
+        per_mese = [per_mese[k] for k in sorted(per_mese.keys())]
+
+    # ── Per portafoglio ──
+    q_pf = _filtra(db.query(
+        Portafoglio.nome, Transazione.tipo,
+        func.coalesce(func.sum(Transazione.importo), 0),
+    )).join(Portafoglio, Transazione.id_portafoglio == Portafoglio.id_portafoglio)
+    per_portafoglio = {}
+    for nome, t, imp in q_pf.group_by(Portafoglio.nome, Transazione.tipo).all():
+        d = per_portafoglio.setdefault(nome, {"nome": nome, "spese": 0.0, "entrate": 0.0})
+        if t == 1: d["spese"] = round(float(imp), 2)
+        elif t == 2: d["entrate"] = round(float(imp), 2)
+    per_portafoglio = sorted(per_portafoglio.values(), key=lambda x: -(x["spese"] + x["entrate"]))
+
+    return {
+        "totali": {"spese": spese, "entrate": entrate, "saldo": round(entrate - spese, 2)},
+        "per_categoria": per_categoria,
+        "per_mese": per_mese,
+        "per_portafoglio": per_portafoglio,
+    }
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=TransazioneOut)
