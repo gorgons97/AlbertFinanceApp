@@ -17,14 +17,30 @@
 /* ── Filtri ── */
 .report-filtri {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  align-items: flex-end;
+  flex-direction: column;
+  gap: 0.75rem;
   padding: 0.9rem;
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 0.75rem;
   margin-bottom: 1.25rem;
+  min-width: 0;
+}
+.report-filter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.report-filter-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #374151;
+}
+.report-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6rem;
+  min-width: 0;
 }
 .report-filter {
   display: flex;
@@ -35,6 +51,12 @@
   font-weight: 600;
   min-width: 0;               /* evita overflow: il contenuto non può forzare la larghezza */
 }
+.report-filter-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #6b7280;
+}
+
 .report-filter input,
 .report-filter select {
   padding: 0.55rem 0.6rem;
@@ -55,17 +77,17 @@
   border-color: #4f46e5;
 }
 .report-reset {
-  width: 38px;
-  height: 38px;
-  border: 2px solid #e5e7eb;
-  border-radius: 0.5rem;
-  background: #f9fafb;
-  font-size: 1.1rem;
-  cursor: pointer;
-  color: #4f46e5;
-  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.7rem;
+  border: none; border-radius: 0.375rem;
+  background: var(--gray-100, #f3f4f6); color: var(--gray-600, #4b5563);
+  cursor: pointer; font-size: 0.8rem; font-family: inherit; font-weight: 600;
+  transition: background 150ms;
 }
-.report-reset:hover { border-color: #4f46e5; }
+.report-reset:hover { background: var(--gray-200, #e5e7eb); }
+.report-reset svg { flex-shrink: 0; }
 
 .report-message {
   padding: 0.75rem 1rem;
@@ -296,7 +318,7 @@
   .report-page h2 { font-size: 1.25rem; }
   .report-cards { grid-template-columns: 1fr; }
   .report-charts-row { grid-template-columns: 1fr; }
-  .report-filter { flex: 1 1 calc(50% - 0.6rem); min-width: 0; }
+  .report-filter-grid { grid-template-columns: repeat(2, 1fr); }
   .report-hbar-name { width: 76px; max-width: 30%; }
   .report-hbar-val { min-width: 3em; font-size: 0.72rem; }
   .report-hbar-row { gap: 0.35rem; }
@@ -305,6 +327,6 @@
 
 /* ── Schermi molto piccoli (≤ 380px) ── */
 @media (max-width: 379px) {
-  .report-filter { flex: 1 1 100%; }
+  .report-filter-grid { grid-template-columns: 1fr; }
   .report-donut { transform: scale(0.92); }
 }

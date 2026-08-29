@@ -183,33 +183,43 @@ const Report = () => {
 
             {/* Filtri */}
             <div className="report-filtri">
-                <label className="report-filter">
-                    <span>Mese</span>
-                    <input type="month" value={mese} onChange={e => setMese(e.target.value)} />
-                </label>
-                <label className="report-filter">
-                    <span>Dal</span>
-                    <input type="date" value={dataInizio} onChange={e => setDataInizio(e.target.value)} />
-                </label>
-                <label className="report-filter">
-                    <span>Al</span>
-                    <input type="date" value={dataFine} onChange={e => setDataFine(e.target.value)} />
-                </label>
-                <label className="report-filter">
-                    <span>Portafoglio</span>
-                    <select value={idPortafoglio} onChange={e => setIdPortafoglio(e.target.value)}>
-                        <option value="">Tutti</option>
-                        {portafogli.map(p => <option key={p.id_portafoglio} value={p.id_portafoglio}>{p.nome}</option>)}
-                    </select>
-                </label>
-                <label className="report-filter">
-                    <span>Categoria</span>
-                    <select value={idCategoria} onChange={e => setIdCategoria(e.target.value)}>
-                        <option value="">Tutte</option>
-                        {categorie.map(c => <option key={c.id_categoria} value={c.id_categoria}>{TIPI_ICONE[c.tipo] || ''} {c.nome}</option>)}
-                    </select>
-                </label>
-                <button className="report-reset" onClick={reset} title="Ripristina al mese corrente">↺</button>
+                <div className="report-filter-header">
+                    <span className="report-filter-title">🔍 Filtri</span>
+                    <button className="report-reset" onClick={reset} title="Azzera filtri">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+                        </svg>
+                        Azzera
+                    </button>
+                </div>
+                <div className="report-filter-grid">
+                    <label className="report-filter">
+                        <span className="report-filter-label">Mese</span>
+                        <input type="month" value={mese} onChange={e => setMese(e.target.value)} />
+                    </label>
+                    <label className="report-filter">
+                        <span className="report-filter-label">Portafoglio</span>
+                        <select value={idPortafoglio} onChange={e => setIdPortafoglio(e.target.value)}>
+                            <option value="">Tutti</option>
+                            {portafogli.map(p => <option key={p.id_portafoglio} value={p.id_portafoglio}>{p.nome}</option>)}
+                        </select>
+                    </label>
+                    <label className="report-filter">
+                        <span className="report-filter-label">Dal</span>
+                        <input type="date" value={dataInizio} onChange={e => setDataInizio(e.target.value)} />
+                    </label>
+                    <label className="report-filter">
+                        <span className="report-filter-label">Al</span>
+                        <input type="date" value={dataFine} onChange={e => setDataFine(e.target.value)} />
+                    </label>
+                    <label className="report-filter">
+                        <span className="report-filter-label">Categoria</span>
+                        <select value={idCategoria} onChange={e => setIdCategoria(e.target.value)}>
+                            <option value="">Tutte</option>
+                            {categorie.map(c => <option key={c.id_categoria} value={c.id_categoria}>{TIPI_ICONE[c.tipo] || ''} {c.nome}</option>)}
+                        </select>
+                    </label>
+                </div>
             </div>
 
             {error && <div className="report-message error">{error}</div>}
