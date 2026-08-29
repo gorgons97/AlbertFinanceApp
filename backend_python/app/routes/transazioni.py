@@ -147,6 +147,7 @@ def lista_transazioni(
     tipo: Optional[str] = Query(None, description="spesa/guadagno/trasferimento"),
     mese: Optional[str] = Query(None, description="YYYY-MM"),
     id_portafoglio: Optional[int] = Query(None, description="Filtra per portafoglio"),
+    id_categoria: Optional[int] = Query(None, description="Filtra per categoria"),
     data_inizio: Optional[str] = Query(None, description="YYYY-MM-DD"),
     data_fine: Optional[str] = Query(None, description="YYYY-MM-DD"),
     limit: int = Query(100, ge=1, le=500),
@@ -162,6 +163,8 @@ def lista_transazioni(
         query = query.filter(Transazione.tipo == _tipo_int(tipo))
     if id_portafoglio:
         query = query.filter(Transazione.id_portafoglio == id_portafoglio)
+    if id_categoria:
+        query = query.filter(Transazione.id_categoria == id_categoria)
     if mese:
         try:
             anno, m = map(int, mese.split('-'))
