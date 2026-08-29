@@ -77,6 +77,8 @@ const Transazioni = () => {
             data_fine: filtri.data_fine !== undefined ? filtri.data_fine : filterDataFine,
             mese: filtri.mese !== undefined ? filtri.mese : filterMese
         };
+        console.log(filterDataInizio)
+        console.log(filterDataFine)
         if (f.tipo) params.append('tipo', f.tipo);
         if (f.id_portafoglio) params.append('id_portafoglio', f.id_portafoglio);
         if (f.id_categoria) params.append('id_categoria', f.id_categoria);
@@ -308,12 +310,12 @@ const Transazioni = () => {
                     <label className="transazioni-filter-field">
                         <span className="transazioni-filter-label">Dal</span>
                         <input type="date" className="transazioni-filter-input" value={filterDataInizio}
-                            onChange={e => { setFilterDataInizio(e.target.value); caricaTransazioni({ data_inizio: e.target.value }); }} />
+                            onChange={e => { setFilterDataInizio(e.target.value); setMese(''); caricaTransazioni({ data_inizio: e.target.value }); }} />
                     </label>
                     <label className="transazioni-filter-field">
                         <span className="transazioni-filter-label">Al</span>
                         <input type="date" className="transazioni-filter-input" value={filterDataFine}
-                            onChange={e => { setFilterDataFine(e.target.value); caricaTransazioni({ data_fine: e.target.value }); }} />
+                            onChange={e => { setFilterDataFine(e.target.value); setMese(''); caricaTransazioni({ data_fine: e.target.value }); }} />
                     </label>
                 </div>
             </div>

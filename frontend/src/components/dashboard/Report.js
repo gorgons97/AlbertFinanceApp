@@ -195,7 +195,7 @@ const Report = () => {
                 <div className="report-filter-grid">
                     <label className="report-filter">
                         <span className="report-filter-label">Mese</span>
-                        <input type="month" value={mese} onChange={e => setMese(e.target.value)} />
+                        <input type="month" value={mese} onChange={e => {setMese(e.target.value); setDataInizio(''); setDataFine('');}} />
                     </label>
                     <label className="report-filter">
                         <span className="report-filter-label">Portafoglio</span>
@@ -206,11 +206,11 @@ const Report = () => {
                     </label>
                     <label className="report-filter">
                         <span className="report-filter-label">Dal</span>
-                        <input type="date" value={dataInizio} onChange={e => setDataInizio(e.target.value)} />
+                        <input type="date" value={dataInizio} onChange={e => {setDataInizio(e.target.value); setMese(''); }} />
                     </label>
                     <label className="report-filter">
                         <span className="report-filter-label">Al</span>
-                        <input type="date" value={dataFine} onChange={e => setDataFine(e.target.value)} />
+                        <input type="date" value={dataFine} onChange={e => {setDataFine(e.target.value); setMese(''); }} />
                     </label>
                     <label className="report-filter">
                         <span className="report-filter-label">Categoria</span>
