@@ -39,3 +39,9 @@ React 19 · FastAPI · PostgreSQL 15 · Docker · SQLAlchemy · JWT
 ## Documentazione
 
 Per dettagli su architettura, schema DB, API e bug noti, vedi [ARCHITECTURE.md](./ARCHITECTURE.md).
+
+## Prima Registrazione
+
+Dopo aver fatto la prima registrazione per poter caricare la prima transazione dovrete necessariamente aver creato dei portafogli e delle categorie, sennò non potrete caricare nessuna transazione
+
+
