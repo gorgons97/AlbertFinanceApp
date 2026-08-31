@@ -263,13 +263,12 @@ async def importa_backup(
         "totale_righe": len(rows),
     }
 
-
 @router.get("/export")
 def esporta_backup(
     user: Utente = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Esporta tutte le transazioni in CSV."""
+    """Esporta tutte le transazioni in CSV, con i trasferimenti su una singola riga."""
     transazioni = db.query(Transazione).filter(
         Transazione.id_utente == user.id_utente,
         Transazione.nascosto == False,
@@ -279,7 +278,25 @@ def esporta_backup(
     writer = csv.writer(output)
     writer.writerow(["Data", "Conto", "Categoria", "Descrizione", "Importo", "Tipo"])
 
+    print("Debug")
+    # Separiamo le transazioni normali da quelle di trasferimento
+    normali = []
+    trasferimenti = []
     for t in transazioni:
+        if t.tipo == 3:
+            if "trasferimento" in t.portafoglio.nome:
+                print("1) sono qui")
+                continue
+            if "trasferimento" in t.categoria.nome:
+                print("2) sono qui")
+                continue
+            
+            trasferimenti.append(t)
+        else:
+            normali.append(t)
+
+    # Esportiamo le transazioni normali
+    for t in normali:
         writer.writerow([
             str(t.data_transazione) if t.data_transazione else "",
             t.portafoglio.nome if t.portafoglio else "",
@@ -288,6 +305,39 @@ def esporta_backup(
             str(float(t.importo)) if t.importo else "0",
             TIPO_TRANSAZIONE.get(t.tipo, 'spesa'),
         ])
+
+    # Raggruppiamo i trasferimenti per (data, importo, descrizione)
+    # (la descrizione è comune per uscita/entrata)
+    gruppi = {}
+    for t in trasferimenti:
+        key = (t.data_transazione, t.importo, t.descrizione)
+        gruppi.setdefault(key, []).append(t)
+
+    # Per ogni gruppo scriviamo una riga unica
+    for key, lista in gruppi.items():
+        out = next((t for t in lista if t.direzione == 1), None)
+        inn = next((t for t in lista if t.direzione == 2), None)
+
+        if out and "trasferimento" in out.portafoglio.nome.lower():
+            continue
+
+        if inn and "trasferimento" in inn.portafoglio.nome.lower():
+            continue
+
+        if out and inn:
+            data = str(key[0]) if key[0] else ""
+            importo = str(float(key[1])) if key[1] else "0"
+            descrizione = key[2] or ""
+            conto_origine = out.portafoglio.nome if out.portafoglio else ""
+            conto_destinazione = inn.portafoglio.nome if inn.portafoglio else ""
+            writer.writerow([
+                data,
+                conto_origine,          # Conto = origine
+                conto_destinazione,     # Categoria = destinazione
+                descrizione,
+                importo,
+                "trasferimento",
+            ])
 
     output.seek(0)
     return StreamingResponse(
