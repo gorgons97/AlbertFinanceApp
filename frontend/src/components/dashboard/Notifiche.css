@@ -43,6 +43,8 @@
 .notifica-btn.rifiuta:hover { background: #fecaca; }
 .notifica-btn.segna { background: #f3f4f6; color: #6b7280; }
 .notifica-btn.segna:hover { background: #e5e7eb; }
+.notifica-btn.elimina { background: #fff; color: #ef4444; border: 1px solid #fecaca; }
+.notifica-btn.elimina:hover { background: #fef2f2; }
 
 .notifiche-loading { color: #6b7280; }
 

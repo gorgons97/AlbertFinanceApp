@@ -49,6 +49,15 @@ const Notifiche = ({ onCambio }) => {
         } catch {}
     };
 
+    const elimina = async (id) => {
+        try {
+            await api.delete(`/api/notifiche/${id}`);
+            carica();
+        } catch (err) {
+            setMsg(err.response?.data?.detail || 'Errore durante l\'eliminazione');
+        }
+    };
+
     if (loading) return <div className="notifiche-page"><p className="notifiche-loading">Caricamento...</p></div>;
 
     return (
@@ -89,6 +98,8 @@ const Notifiche = ({ onCambio }) => {
                                         Segna letta
                                     </button>
                                 )}
+                                <button className="notifica-btn elimina"
+                                    onClick={() => elimina(n.id_notifica)} title="Elimina notifica">🗑️</button>
                             </div>
                         </li>
                     ))}

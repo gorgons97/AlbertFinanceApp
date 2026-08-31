@@ -62,3 +62,36 @@
   .backup-actions { grid-template-columns: 1fr; }
   .impostazioni-section { padding: 1rem; }
 }
+
+/* ---- Sezione Eliminazione Dati ---- */
+.elim-section { border-color: #fecaca; }
+.elim-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.elim-card {
+  text-align: center; padding: 1.5rem 1rem;
+  border: 2px solid var(--gray-200, #e5e7eb); border-radius: var(--radius-md, 0.5rem);
+}
+.elim-card-danger { border-color: #fecaca; background: #fef2f2; }
+.elim-icon { font-size: 2rem; display: block; margin-bottom: 0.5rem; }
+.elim-card h4 { font-size: 1rem; color: #111827; margin: 0 0 0.5rem; }
+.elim-card p { font-size: 0.85rem; color: #6b7280; margin: 0 0 1rem; line-height: 1.4; }
+
+.elim-btn {
+  background: #fff; color: #ef4444; border: 2px solid #fecaca;
+}
+.elim-btn:hover { background: #fee2e2; }
+.elim-btn-danger { background: #ef4444; color: #fff; border: 2px solid #ef4444; }
+.elim-btn-danger:hover { background: #dc2626; }
+
+@media (max-width: 767px) {
+  .elim-actions { grid-template-columns: 1fr; }
+}
+
+/* ---- Modal eliminazione ---- */
+.elim-modal { max-width: 420px; }
+.elim-modal-desc { color: #6b7280; font-size: 0.9rem; line-height: 1.5; margin: 0.5rem 0 1rem; }
+.elim-password-input {
+  width: 100%; padding: 0.7rem 0.9rem; box-sizing: border-box;
+  border: 2px solid var(--gray-200, #e5e7eb); border-radius: var(--radius-md, 0.5rem);
+  font-size: 0.95rem; font-family: inherit; background: #fff; color: #111827; outline: none;
+}
+.elim-password-input:focus { border-color: #ef4444; }

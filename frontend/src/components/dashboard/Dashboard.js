@@ -71,7 +71,7 @@ const Dashboard = () => {
             case 'portafogli':    return <Portafogli />;
             case 'transazioni':   return <Transazioni />;
             case 'report':        return <Report />;
-            case 'impostazioni':  return <Impostazioni />;
+            case 'impostazioni':  return <Impostazioni onLogout={handleLogout} />;
             case 'notifiche':     return <Notifiche onCambio={setNonLette} />;
             case 'dashboard':
             default:              return <DashboardHome />;
