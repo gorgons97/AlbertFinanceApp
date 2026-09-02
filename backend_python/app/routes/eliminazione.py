@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
+from datetime import date as date_type
 
 from ..database import get_db
-from ..models import Utente
+from ..models import Utente, TIPO_TRANSAZIONE_REV
 from .auth import get_current_user, pwd_context
 from ..services import eliminazione
 
@@ -13,6 +14,16 @@ router = APIRouter()
 
 class EliminazioneRequest(BaseModel):
     password: str
+
+
+class EliminaTransazioniFiltrateRequest(BaseModel):
+    password: str
+    tutto: bool = False
+    tipi: Optional[list[str]] = None          # 'spesa','guadagno','trasferimento'
+    id_categorie: Optional[list[int]] = None
+    id_portafogli: Optional[list[int]] = None
+    dal: Optional[str] = None                  # YYYY-MM-DD
+    al: Optional[str] = None                   # YYYY-MM-DD
 
 
 def _verifica_password(password: str, user: Utente) -> None:
@@ -32,6 +43,44 @@ def cancella_transazioni(
 ):
     _verifica_password(data.password, user)
     risultato = eliminazione.elimina_tutte_le_transazioni(user, db)
+    db.commit()
+    return {"message": "Transazioni eliminate", **risultato}
+
+
+# POST /api/eliminazione/transazioni/filtrate — cancella transazioni con filtri
+@router.post("/transazioni/filtrate")
+def cancella_transazioni_filtrate(
+    data: EliminaTransazioniFiltrateRequest,
+    user: Utente = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _verifica_password(data.password, user)
+
+    if not data.tutto and not (
+        data.tipi or data.id_categorie or data.id_portafogli or data.dal or data.al
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="Seleziona almeno un filtro oppure scegli 'Tutto'",
+        )
+
+    if data.tutto:
+        risultato = eliminazione.elimina_tutte_le_transazioni(user, db)
+    else:
+        tipi_int = [
+            TIPO_TRANSAZIONE_REV[t] for t in (data.tipi or [])
+            if t in TIPO_TRANSAZIONE_REV
+        ]
+        dal_d = date_type.fromisoformat(data.dal) if data.dal else None
+        al_d = date_type.fromisoformat(data.al) if data.al else None
+        risultato = eliminazione.elimina_transazioni_filtrate(
+            user, db,
+            tipi=tipi_int or None,
+            id_categorie=data.id_categorie,
+            id_portafogli=data.id_portafogli,
+            dal=dal_d,
+            al=al_d,
+        )
     db.commit()
     return {"message": "Transazioni eliminate", **risultato}
 

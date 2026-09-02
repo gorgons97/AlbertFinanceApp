@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from datetime import date as date_type, datetime
+from typing import Optional
 from io import BytesIO, StringIO
 import csv, io
 from ..database import get_db
@@ -88,6 +89,10 @@ async def importa_backup(
     created_cat = 0
     created_tr = 0
 
+    # Solo i portafogli effettivamente toccati dall'import avranno il saldo ricalcolato.
+    # Quelli non menzionati nel file NON vanno mai toccati (es. condivisi con altri utenti).
+    portafogli_toccati = set()
+
     for idx, row in enumerate(rows):
         # Col 0: data, Col 1: conto, Col 2: categoria, Col 3: nota, Col 4: importo, Col 5: tipo
         nome_conto = str(row[1]).strip() if row[1] else ""
@@ -127,6 +132,7 @@ async def importa_backup(
                 _debug(f"  riga {idx}: CREATO portafoglio '{nome_conto}' (id={pf.id_portafoglio})")
             pf_cache[key_pf] = pf
         pf = pf_cache[key_pf]
+        portafogli_toccati.add(pf.id_portafoglio)
 
         if tipo_tr != 3:
             # Categoria: crea se non esiste
@@ -166,6 +172,7 @@ async def importa_backup(
                     _debug(f"  riga {idx}: CREATO portafoglio '{nome_cat}' (id={pf_dest.id_portafoglio})")
                 pf_cache[key_pf] = pf_dest
             pf_dest = pf_cache[key_pf]
+            portafogli_toccati.add(pf_dest.id_portafoglio)
 
             nota = f"Trasferimento da {pf.nome} a {pf_dest.nome}"
 
@@ -229,9 +236,15 @@ async def importa_backup(
     db.flush()
     _debug(f"Flush eseguito. Transazioni create: {created_tr}")
 
-    # Aggiorna saldi di tutti i portafogli toccati (usando la direzione, come nel resto del sistema)
-    _debug("=== Ricalcolo saldi portafogli ===")
-    for pf in pf_cache.values():
+    # Aggiorna i saldi SOLO dei portafogli toccati dall'import (usando la direzione,
+    # come nel resto del sistema). I portafogli non menzionati restano intoccati:
+    # un portafoglio condiviso con altri utenti non deve mai essere azzerato da un
+    # import che non lo riguarda.
+    _debug("=== Ricalcolo saldi portafogli toccati ===")
+    for pf_id in portafogli_toccati:
+        pf = db.query(Portafoglio).filter(Portafoglio.id_portafoglio == pf_id).first()
+        if not pf or pf.tipo == 1:
+            continue  # Generale: saldo derivato, non toccarlo
         entrate = db.query(Transazione).filter(
             Transazione.id_portafoglio == pf.id_portafoglio,
             Transazione.id_utente == user.id_utente,
@@ -268,12 +281,51 @@ async def importa_backup(
 def esporta_backup(
     user: Utente = Depends(get_current_user),
     db: Session = Depends(get_db),
+    tipi: Optional[str] = Query(None, description="Filtro tipi, comma-separati: spesa,guadagno,trasferimento"),
+    id_categorie: Optional[str] = Query(None, description="Filtro categorie, comma-separate (id)"),
+    id_portafogli: Optional[str] = Query(None, description="Filtro portafogli, comma-separati (id)"),
+    dal: Optional[str] = Query(None, description="Data inizio YYYY-MM-DD"),
+    al: Optional[str] = Query(None, description="Data fine YYYY-MM-DD"),
 ):
-    """Esporta tutte le transazioni in CSV."""
-    transazioni = db.query(Transazione).filter(
+    """Esporta le transazioni in CSV. Senza filtri esporta tutto; con i filtri
+    esporta solo le transazioni che li soddisfano (AND tra i filtri)."""
+    query = db.query(Transazione).filter(
         Transazione.id_utente == user.id_utente,
         Transazione.nascosto == False,
-    ).order_by(Transazione.data_transazione.asc()).all()
+    )
+
+    if tipi:
+        tipi_list = [t.strip() for t in tipi.split(",") if t.strip()]
+        tipi_int = [TIPO_TRANSAZIONE_REV.get(t) for t in tipi_list]
+        tipi_int = [t for t in tipi_int if t is not None]
+        if tipi_int:
+            query = query.filter(Transazione.tipo.in_(tipi_int))
+    if id_categorie:
+        try:
+            cat_ids = [int(x) for x in id_categorie.split(",") if x.strip()]
+            if cat_ids:
+                query = query.filter(Transazione.id_categoria.in_(cat_ids))
+        except ValueError:
+            pass
+    if id_portafogli:
+        try:
+            pf_ids = [int(x) for x in id_portafogli.split(",") if x.strip()]
+            if pf_ids:
+                query = query.filter(Transazione.id_portafoglio.in_(pf_ids))
+        except ValueError:
+            pass
+    if dal:
+        try:
+            query = query.filter(Transazione.data_transazione >= date_type.fromisoformat(dal))
+        except ValueError:
+            pass
+    if al:
+        try:
+            query = query.filter(Transazione.data_transazione <= date_type.fromisoformat(al))
+        except ValueError:
+            pass
+
+    transazioni = query.order_by(Transazione.data_transazione.asc()).all()
 
     output = io.StringIO()
     writer = csv.writer(output)

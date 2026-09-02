@@ -33,6 +33,7 @@ frontend/build/
 *.sql.gz
 *.dump
 
+
 # Backup files (user data)
 *.xlsx
 *.xls
@@ -56,3 +57,6 @@ nginx/ssl/
 *.pem
 *.crt
 *.key
+
+#script base
+*Tool.sh
