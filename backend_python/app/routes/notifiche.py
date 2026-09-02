@@ -59,6 +59,23 @@ def segna_letta(
     return {"message": "Notifica letta"}
 
 
+# DELETE /api/notifiche/{id} — elimina una notifica dell'utente
+@router.delete("/{notifica_id}")
+def elimina_notifica(
+    notifica_id: int,
+    user: Utente = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    n = db.query(Notifica).filter(Notifica.id_notifica == notifica_id).first()
+    if not n:
+        raise HTTPException(404, "Notifica non trovata")
+    if n.id_utente != user.id_utente:
+        raise HTTPException(403, "Non autorizzato")
+    db.delete(n)
+    db.commit()
+    return {"message": "Notifica eliminata"}
+
+
 # POST /api/inviti/{id}/accetta — accetta un invito a un portafoglio
 @router.post("/inviti/{invito_id}/accetta")
 def accetta_invito(
@@ -98,7 +115,7 @@ def accetta_invito(
     inv.id_invitato = user.id_utente
     inv.data_risposta = datetime.utcnow()
 
-    # Marca letta la notifica collegata
+    # Elimina la notifica di invito collegata (non deve restare nella sezione)
     if inv.id_invito:
         n = db.query(Notifica).filter(
             Notifica.id_utente == user.id_utente,
@@ -106,7 +123,7 @@ def accetta_invito(
             Notifica.riferimento_id == inv.id_invito,
         ).first()
         if n:
-            n.letto = True
+            db.delete(n)
 
     db.commit()
     return {"message": "Invito accettato", "stato": STATO_INVITO[2]}
@@ -133,13 +150,14 @@ def rifiuta_invito(
     inv.stato = 3  # rifiutato
     inv.data_risposta = datetime.utcnow()
 
+    # Elimina la notifica di invito collegata (non deve restare nella sezione)
     n = db.query(Notifica).filter(
         Notifica.id_utente == user.id_utente,
         Notifica.tipo == 1,
         Notifica.riferimento_id == inv.id_invito,
     ).first()
     if n:
-        n.letto = True
+        db.delete(n)
 
     db.commit()
     return {"message": "Invito rifiutato", "stato": STATO_INVITO[3]}

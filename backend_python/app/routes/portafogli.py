@@ -11,6 +11,7 @@ from ..models import (
     TIPO_PORTAFOGLIO, TIPO_PORTAFOGLIO_REV, RUOLO_PORTAFOGLIO,
 )
 from .auth import get_current_user
+from ..services.eliminazione import esci_da_portafoglio
 
 router = APIRouter()
 
@@ -233,9 +234,28 @@ def rimuovi_portafoglio(
     if _ruolo_utente(db, user.id_utente, portafoglio_id) != 'proprietario':
         raise HTTPException(status_code=403, detail="Solo il proprietario puo' eliminare il portafoglio")
 
-    user.portafogli.remove(pf)
+    # Delega al servizio di eliminazione, che gestisce proprieta' e orfani:
+    #  - se l'owner e' l'UNICO membro      -> elimina la riga portafoglio (e le sue transazioni);
+    #  - se l'owner ha cointestatari       -> trasferisce la proprieta' al membro piu' anziano
+    #    e rimuove la sua associazione (mai portafogli senza proprietario);
+    #  - il portafoglio condiviso resta sempre eliminabile senza restare "nell'etere".
+    risultato = esci_da_portafoglio(
+        user, db, pf, cancella_transazioni=True,
+    )
     db.commit()
-    return {"message": f"Portafoglio '{pf.nome}' rimosso"}
+
+    esito = risultato["esito"]
+    if esito == "eliminato":
+        return {"message": f"Portafoglio '{pf.nome}' eliminato"}
+    if esito == "proprieta_trasferita":
+        return {
+            "message": f"Proprieta' del portafoglio '{pf.nome}' trasferita "
+                       f"al cointestatario piu' anziano",
+            "esito": "proprieta_trasferita",
+            "id_portafoglio": pf.id_portafoglio,
+            "nuovo_proprietario": risultato["nuovo_proprietario"],
+        }
+    return {"message": f"Sei uscito dal portafoglio '{pf.nome}'", "esito": "uscito"}
 
 
 # POST /api/portafogli/{id}/invita — invita un utente (per email)
