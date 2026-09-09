@@ -50,6 +50,7 @@ def _transazione_to_out(t: Transazione, nome_utente: Optional[str] = None) -> di
         "id_categoria": t.id_categoria,
         "nome_categoria": nome_cat,
         "tipo": _tipo_str(t.tipo),
+        "direzione": t.direzione,
         "importo": float(t.importo) if t.importo else 0.0,
         "descrizione": t.descrizione or "",
         "data_transazione": str(t.data_transazione) if t.data_transazione else "",
@@ -107,6 +108,7 @@ class TransazioneOut(BaseModel):
     id_categoria: int
     nome_categoria: str
     tipo: str
+    direzione: int
     importo: float
     descrizione: str
     data_transazione: str
