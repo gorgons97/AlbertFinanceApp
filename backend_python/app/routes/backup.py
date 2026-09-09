@@ -6,6 +6,7 @@ from typing import Optional
 from io import BytesIO, StringIO
 import csv, io
 from ..database import get_db
+from ..services.saldi import ricalcola_saldo
 from ..models import (
     Transazione, Portafoglio, Categoria, Utente,
     TIPO_TRANSAZIONE, TIPO_TRANSAZIONE_REV,
@@ -236,33 +237,17 @@ async def importa_backup(
     db.flush()
     _debug(f"Flush eseguito. Transazioni create: {created_tr}")
 
-    # Aggiorna i saldi SOLO dei portafogli toccati dall'import (usando la direzione,
-    # come nel resto del sistema). I portafogli non menzionati restano intoccati:
-    # un portafoglio condiviso con altri utenti non deve mai essere azzerato da un
-    # import che non lo riguarda.
+    # Aggiorna i saldi SOLO dei portafogli toccati dall'import (usando la
+    # direzione, come nel resto del sistema). Il valore di un portafoglio è
+    # unico e condiviso: ricalcolarlo = sommare le transazioni di TUTTI i suoi
+    # membri correnti (un cointestato non può dipendere dal singolo utente).
+    # I portafogli non menzionati restano intoccati.
     _debug("=== Ricalcolo saldi portafogli toccati ===")
     for pf_id in portafogli_toccati:
-        pf = db.query(Portafoglio).filter(Portafoglio.id_portafoglio == pf_id).first()
-        if not pf or pf.tipo == 1:
-            continue  # Generale: saldo derivato, non toccarlo
-        entrate = db.query(Transazione).filter(
-            Transazione.id_portafoglio == pf.id_portafoglio,
-            Transazione.id_utente == user.id_utente,
-            Transazione.direzione == 2,
-            Transazione.nascosto == False,
-        ).all()
-        uscite = db.query(Transazione).filter(
-            Transazione.id_portafoglio == pf.id_portafoglio,
-            Transazione.id_utente == user.id_utente,
-            Transazione.direzione == 1,
-            Transazione.nascosto == False,
-        ).all()
-        tot_entrate = sum(float(t.importo) for t in entrate)
-        tot_uscite = sum(float(t.importo) for t in uscite)
-        saldo = round(tot_entrate - tot_uscite, 2)
-        pf.valore = saldo
-        _debug(f"  saldo '{pf.nome}' (id={pf.id_portafoglio}): "
-               f"entrate={tot_entrate} uscite={tot_uscite} -> {saldo}")
+        saldo = ricalcola_saldo(db, pf_id)
+        if saldo is not None:
+            pf = db.query(Portafoglio).filter(Portafoglio.id_portafoglio == pf_id).first()
+            _debug(f"  saldo '{pf.nome}' (id={pf.id_portafoglio}) -> {saldo}")
 
     db.commit()
     _debug(f"=== IMPORT COMPLETATO: {created_pf} pf creati, {created_cat} cat create, "
