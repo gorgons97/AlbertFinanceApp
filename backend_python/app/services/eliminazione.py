@@ -29,6 +29,7 @@ from ..models import (
     Utente, Transazione, Portafoglio, Categoria,
     utenti_portafogli, utenti_categorie,
 )
+from .saldi import ricalcola_saldo
 
 # Ruoli (coerenti con models.py)
 RUOLO_PROPRIETARIO = 1
@@ -88,25 +89,12 @@ def _categoria_ancora_usata(db: Session, id_categoria: int) -> bool:
 
 
 def _ricalcola_saldo(db: Session, id_portafoglio: int, id_utente: int):
-    """Ricalcola il valore di un portafoglio (non Generale) in base alle
-    transazioni di id_utente, come fa il resto del sistema."""
-    pf = db.query(Portafoglio).filter(Portafoglio.id_portafoglio == id_portafoglio).first()
-    if not pf or pf.tipo == 1:
-        return
-    entrate = db.query(Transazione).filter(
-        Transazione.id_portafoglio == id_portafoglio,
-        Transazione.id_utente == id_utente,
-        Transazione.direzione == 2,
-        Transazione.nascosto == False,
-    ).all()
-    uscite = db.query(Transazione).filter(
-        Transazione.id_portafoglio == id_portafoglio,
-        Transazione.id_utente == id_utente,
-        Transazione.direzione == 1,
-        Transazione.nascosto == False,
-    ).all()
-    saldo = sum(float(t.importo) for t in entrate) - sum(float(t.importo) for t in uscite)
-    pf.valore = round(saldo, 2)
+    """Ricalcola il valore di un portafoglio (non Generale) sulle transazioni
+    di TUTTI i suoi membri correnti, come fa il resto del sistema. Il valore
+    .valore è unico e condiviso: quando l'utente è uscito (o ha cancellato le
+    proprie transazioni) non è più membro, quindi smette di contribuire.
+    id_utente è mantenuto per compatibilità con i chiamanti."""
+    ricalcola_saldo(db, id_portafoglio)
 
 
 # ---------------------------------------------------------------------------
@@ -166,6 +154,7 @@ def esci_da_portafoglio(
             .values(ruolo=RUOLO_PROPRIETARIO)
         )
         _rimuovi_associazione(db, pf_id, user.id_utente)
+        ricalcola_saldo(db, pf_id)  # il valore ora riflette i membri rimasti
         return {
             "esito": "proprieta_trasferita",
             "id_portafoglio": pf_id,
@@ -174,6 +163,7 @@ def esci_da_portafoglio(
 
     # cointestatario: esce e basta
     _rimuovi_associazione(db, pf_id, user.id_utente)
+    ricalcola_saldo(db, pf_id)  # il valore ora riflette i membri rimasti
     return {"esito": "uscito", "id_portafoglio": pf_id}
 
 

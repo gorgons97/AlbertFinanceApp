@@ -359,8 +359,8 @@ const Transazioni = () => {
                                         <span className="tr-desc">{t.descrizione || TIPO_LABEL[t.tipo]}</span>
                                         <span className="tr-meta">{t.nome_portafoglio} · {t.nome_categoria} · {t.data_transazione}</span>
                                     </div>
-                                    <span className={`tr-importo ${t.tipo==='guadagno'?'tr-importo-positivo':'tr-importo-negativo'}`}>
-                                        {t.tipo==='guadagno'?'+':'-'}{parseFloat(t.importo).toFixed(2)} €
+                                    <span className={`tr-importo ${Number(t.direzione)===2?'tr-importo-positivo':'tr-importo-negativo'}`}>
+                                        {Number(t.direzione)===2?'+':'-'}{parseFloat(t.importo).toFixed(2)} €
                                     </span>
                                     {!t.nome_utente ? (
                                     <div className='tr-coda'>

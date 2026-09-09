@@ -360,8 +360,8 @@ const DashboardHome = () => {
                                             <span className="tr-desc">{t.descrizione || (t.tipo==='spesa'?'Spesa':'Guadagno')}</span>
                                             <span className="tr-meta">{t.nome_portafoglio} · {t.nome_categoria} · {t.data_transazione} </span>
                                         </div>
-                                        <span className={`tr-importo ${t.tipo==='guadagno'?'tr-importo-positivo':'tr-importo-negativo'}`}>
-                                            {t.tipo==='guadagno'?'+':'-'}{parseFloat(t.importo).toFixed(2)} €
+                                        <span className={`tr-importo ${Number(t.direzione)===2?'tr-importo-positivo':'tr-importo-negativo'}`}>
+                                            {Number(t.direzione)===2?'+':'-'}{parseFloat(t.importo).toFixed(2)} €
                                         </span>
                                     </li>
                                 ))}

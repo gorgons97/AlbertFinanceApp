@@ -6,6 +6,7 @@ from decimal import Decimal
 from datetime import date as date_type, datetime
 from typing import Optional
 from ..database import get_db
+from ..services.saldi import ricalcola_saldo
 from ..models import (
     Transazione, Portafoglio, Categoria, Utente, utenti_portafogli,
     TIPO_TRANSAZIONE, TIPO_TRANSAZIONE_REV, TIPO_PORTAFOGLIO,
@@ -49,6 +50,7 @@ def _transazione_to_out(t: Transazione, nome_utente: Optional[str] = None) -> di
         "id_categoria": t.id_categoria,
         "nome_categoria": nome_cat,
         "tipo": _tipo_str(t.tipo),
+        "direzione": t.direzione,
         "importo": float(t.importo) if t.importo else 0.0,
         "descrizione": t.descrizione or "",
         "data_transazione": str(t.data_transazione) if t.data_transazione else "",
@@ -106,6 +108,7 @@ class TransazioneOut(BaseModel):
     id_categoria: int
     nome_categoria: str
     tipo: str
+    direzione: int
     importo: float
     descrizione: str
     data_transazione: str
@@ -119,23 +122,13 @@ class TransazioneOut(BaseModel):
 
 
 def _aggiorna_saldo_portafoglio(db: Session, id_portafoglio: int, id_utente: int):
+    """Ricalcola il valore del portafoglio sulle transazioni di TUTTI i suoi
+    membri (il valore .valore è unico e condiviso: ogni utente legge quello
+    stesso numero). Il parametro id_utente è mantenuto per compatibilità con i
+    chiamanti ma NON filtra più: su un cointestato il saldo non può dipendere
+    dal singolo utente che compie l'operazione."""
     db.flush()  # applica modifiche pendenti (add/delete/update) prima del ricalcolo
-    entrate = db.query(Transazione).filter(
-        Transazione.id_portafoglio == id_portafoglio,
-        Transazione.id_utente == id_utente,
-        Transazione.direzione == 2,
-        Transazione.nascosto == False,
-    ).all()
-    uscite = db.query(Transazione).filter(
-        Transazione.id_portafoglio == id_portafoglio,
-        Transazione.id_utente == id_utente,
-        Transazione.direzione == 1,
-        Transazione.nascosto == False,
-    ).all()
-    saldo = sum(float(t.importo) for t in entrate) - sum(float(t.importo) for t in uscite)
-    pf = db.query(Portafoglio).filter(Portafoglio.id_portafoglio == id_portafoglio).first()
-    if pf and pf.tipo != 1:
-        pf.valore = round(saldo, 2)
+    ricalcola_saldo(db, id_portafoglio)
 
 
 # ── Endpoints ──
