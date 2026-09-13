@@ -14,9 +14,8 @@ function App() {
           {/* Auth routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Registrazione />} />
-          {/* 
           <Route path="/forgot" element={<ForgotPassword />} />
-          */}
+          <Route path="/reset-password" element={<ForgotPassword />} />
 
           {/* Dashboard (autoprotetta via controllo token interno) */}
           <Route path="/dashboard" element={<Dashboard />} />

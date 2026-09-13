@@ -1,20 +1,17 @@
--- Crea il database se non esiste
-CREATE DATABASE albert_app;
-CREATE USER "albert" WITH PASSWORD 'AlbertPig2025!';
-GRANT ALL PRIVILEGES ON DATABASE albert_app TO "albert";
-
 -- Connettiti al database per creare le tabelle
 \c albert_app;
 
 -- Tabella Utente
 CREATE TABLE utenti (
     id_utente SERIAL PRIMARY KEY,
+    supabase_uid VARCHAR(64) UNIQUE,
     nome VARCHAR(100) NOT NULL,
     cognome VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255),
     data_creazione TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+CREATE INDEX ix_utenti_supabase_uid ON utenti(supabase_uid);
 
 -- Tabella Portafoglio (tipo: 1=generale 2=contanti 3=conti 4=carta di credito 5=risparmi)
 CREATE TABLE portafogli (

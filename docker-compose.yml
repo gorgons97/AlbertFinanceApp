@@ -46,9 +46,48 @@ services:
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
       - REACT_APP_API_BASE=${REACT_APP_API_BASE}
+      - HOST=0.0.0.0
+      - REACT_APP_SUPABASE_URL=${REACT_APP_SUPABASE_URL:-http://localhost:9999}
+      - REACT_APP_SUPABASE_ANON_KEY=${REACT_APP_SUPABASE_ANON_KEY}
     depends_on:
       - backend
+      - gotrue
     restart: unless-stopped
+
+  gotrue:
+    image: supabase/gotrue:v2.158.1
+    container_name: albert_gotrue
+    expose:
+      - "9999"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: ${API_EXTERNAL_URL:-http://localhost:9999}
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?sslmode=disable&search_path=auth
+      GOTRUE_SITE_URL: ${GOTRUE_SITE_URL:-http://localhost:3001}
+      GOTRUE_URI_ALLOW_LIST: "*"
+      GOTRUE_DISABLE_SIGNUP: "false"
+      GOTRUE_JWT_SECRET: ${SECRET_KEY}
+      GOTRUE_JWT_EXP: 86400
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      GOTRUE_MAILER_AUTOCONFIRM: "true"
+      GOTRUE_EXTERNAL_GOOGLE_ENABLED: "${GOTRUE_EXTERNAL_GOOGLE_ENABLED:-false}"
+      GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID:-}"
+      GOTRUE_EXTERNAL_GOOGLE_SECRET: "${GOOGLE_CLIENT_SECRET:-}"
+      GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI: "${GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI:-http://localhost:9999/callback}"
+      GOTRUE_SMTP_HOST: "${SMTP_HOST:-}"
+      GOTRUE_SMTP_PORT: "${SMTP_PORT:-587}"
+      GOTRUE_SMTP_USER: "${SMTP_USER:-}"
+      GOTRUE_SMTP_PASS: "${SMTP_PASS:-}"
+      GOTRUE_SMTP_ADMIN_EMAIL: "${SMTP_ADMIN_EMAIL:-admin@albert.local}"
+
 
   nginx:
     image: nginx:latest
@@ -56,6 +95,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
+      - "9999:9999"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro       # per certificati self-signed (opzionale)
@@ -63,6 +103,7 @@ services:
     depends_on:
       - frontend
       - backend
+      - gotrue
     restart: unless-stopped
 
 volumes:

@@ -40,10 +40,11 @@ frontend/build/
 *.csv
 backup/
 
-# Documentation (except ARCHITECTURE.md)
+# Documentation (except ARCHITECTURE.md and specific guides)
 *.md
 !ARCHITECTURE.md
 !README.md
+!CONFIGURAZIONE_EMAIL_SMTP.md
 
 # Logs
 *.log
