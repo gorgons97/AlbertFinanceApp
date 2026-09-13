@@ -55,21 +55,90 @@ def create_access_token(data: dict) -> str:
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
-# Dipendenza per proteggere le route: estrae l'utente dal token JWT
+# Dipendenza per proteggere le route: estrae l'utente dal token JWT (GoTrue o legacy)
 def get_current_user(authorization: str = Header(None), db: Session = Depends(get_db)) -> Utente:
     if not authorization or not authorization.startswith("Bearer "):
+        print(f"[AUTH DEBUG] Header non Bearer: {authorization}")
         raise HTTPException(status_code=401, detail="Token mancante")
     token = authorization.split(" ")[1]
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id = int(payload.get("sub"))
-    except (JWTError, ValueError, TypeError):
-        raise HTTPException(status_code=401, detail="Token non valido")
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM], options={"verify_aud": False})
+        user_sub = payload.get("sub")
+        if not user_sub:
+            print(f"[AUTH DEBUG] Subject mancante nel payload: {payload}")
+            raise HTTPException(status_code=401, detail="Token non valido: subject mancante")
+    except (JWTError, ValueError, TypeError) as e:
+        print(f"[AUTH DEBUG] jwt.decode fallito: {e} - Token: {token[:30]}...")
+        raise HTTPException(status_code=401, detail=f"Token non valido: {str(e)}")
 
-    utente = db.query(Utente).filter(Utente.id_utente == user_id).first()
-    if not utente:
-        raise HTTPException(status_code=401, detail="Utente non trovato")
-    return utente
+    user_sub_str = str(user_sub)
+
+    # 1. Cerca per supabase_uid (token GoTrue)
+    utente = db.query(Utente).filter(Utente.supabase_uid == user_sub_str).first()
+    if utente:
+        return utente
+
+    # 2. Se sub è numerico, cerca per id_utente (vecchio token interno di Albert)
+    if user_sub_str.isdigit():
+        utente = db.query(Utente).filter(Utente.id_utente == int(user_sub_str)).first()
+        if utente:
+            return utente
+
+    # 3. Se non trovato per sub, cerca per email dal token GoTrue e collega il supabase_uid
+    token_email = payload.get("email")
+    if token_email:
+        email_clean = str(token_email).strip().lower()
+        utente = db.query(Utente).filter(Utente.email.ilike(email_clean)).first()
+        if utente:
+            utente.supabase_uid = user_sub_str
+            db.commit()
+            db.refresh(utente)
+            return utente
+
+        # 4. Nuovo utente registrato tramite GoTrue: creiamo profilo Utente locale e portafoglio Generale
+        user_meta = payload.get("user_metadata") or {}
+        nome = user_meta.get("nome") or user_meta.get("given_name")
+        cognome = user_meta.get("cognome") or user_meta.get("family_name")
+        if not nome:
+            full_name = user_meta.get("full_name") or user_meta.get("name")
+            if full_name:
+                parts = str(full_name).strip().split(" ", 1)
+                nome = parts[0]
+                if len(parts) > 1 and not cognome:
+                    cognome = parts[1]
+        nome = (nome or email_clean.split("@")[0]).strip().capitalize()
+        cognome = (cognome or "").strip().capitalize()
+
+        nuovo_utente = Utente(
+            supabase_uid=user_sub_str,
+            email=email_clean,
+            nome=nome,
+            cognome=cognome,
+        )
+        db.add(nuovo_utente)
+        db.flush()
+
+        portafoglio_generale = Portafoglio(nome="Generale", valore=0, tipo=1)
+        db.add(portafoglio_generale)
+        db.flush()
+        nuovo_utente.portafogli.append(portafoglio_generale)
+        db.commit()
+        db.refresh(nuovo_utente)
+        return nuovo_utente
+
+    raise HTTPException(status_code=401, detail="Utente non trovato")
+
+
+# Endpoint informativo sul profilo utente autenticato
+@router.get("/me")
+def get_me(user: Utente = Depends(get_current_user)):
+    return {
+        "id_utente": user.id_utente,
+        "supabase_uid": user.supabase_uid,
+        "nome": user.nome,
+        "cognome": user.cognome,
+        "email": user.email,
+    }
 
 
 # Endpoint per la registrazione

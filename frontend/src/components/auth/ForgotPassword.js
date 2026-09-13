@@ -1,80 +1,122 @@
-import React, { useState } from 'react';
-import api from '../../api';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import supabase from '../../supabase';
+import { Link, useNavigate } from 'react-router-dom';
 import './ForgotPassword.css';
 
 const ForgotPassword = () => {
-    const [formData, setFormData] = useState({ email: '', newPassword: '', confermaPassword: '' });
-    const [errors, setErrors] = useState({ email: '', newPassword: '', confermaPassword: '' });
-    const [touched, setTouched] = useState({ email: false, newPassword: false, confermaPassword: false });
+    const navigate = useNavigate();
+
+    // Modalità: false = richiesta link email (Step 1), true = impostazione nuova password (Step 2)
+    const [isRecoveryMode, setIsRecoveryMode] = useState(false);
+
+    // Form Step 1: Richiesta Link
+    const [email, setEmail] = useState('');
+    const [emailError, setEmailError] = useState('');
+    const [emailTouched, setEmailTouched] = useState(false);
+
+    // Form Step 2: Nuova Password
+    const [newPassword, setNewPassword] = useState('');
+    const [confermaPassword, setConfermaPassword] = useState('');
+    const [passwordErrors, setPasswordErrors] = useState({ newPassword: '', confermaPassword: '' });
+    const [passwordTouched, setPasswordTouched] = useState({ newPassword: false, confermaPassword: false });
+    const [showPassword, setShowPassword] = useState(false);
+
+    // UI States
     const [message, setMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [success, setSuccess] = useState(false);
+    const [emailSentSuccess, setEmailSentSuccess] = useState(false);
+    const [passwordResetSuccess, setPasswordResetSuccess] = useState(false);
 
-    const validateEmail = (email) => {
-        if (!email) return "Email e' richiesta";
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Inserisci un indirizzo email valido';
+    // Rileva se l'utente arriva dal link di recupero inviato per email
+    useEffect(() => {
+        // Controllo se l'hash dell'URL contiene type=recovery
+        const hash = window.location.hash;
+        if (hash && (hash.includes('type=recovery') || hash.includes('access_token='))) {
+            setIsRecoveryMode(true);
+        }
+
+        // Listener Supabase per l'evento di recupero password
+        const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
+            if (event === 'PASSWORD_RECOVERY') {
+                setIsRecoveryMode(true);
+            }
+        });
+
+        return () => {
+            authListener?.subscription?.unsubscribe();
+        };
+    }, []);
+
+    const validateEmail = (val) => {
+        if (!val) return 'Email richiesta';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) return 'Inserisci un indirizzo email valido';
         return '';
     };
 
     const validatePassword = (pw) => {
         if (!pw) return 'Password richiesta';
         if (pw.length < 8) return 'La password deve avere almeno 8 caratteri';
-        if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(pw)) return 'Password deve contenere maiuscola, minuscola e numero';
         return '';
     };
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-        if (touched[name]) {
-            let err = '';
-            if (name === 'email') err = validateEmail(value);
-            else if (name === 'newPassword') err = validatePassword(value);
-            else if (name === 'confermaPassword') err = value !== formData.newPassword ? 'Le password non coincidono' : '';
-            setErrors(prev => ({ ...prev, [name]: err }));
-        }
-        if (name === 'newPassword' && touched.confermaPassword) {
-            setErrors(prev => ({
-                ...prev,
-                confermaPassword: value !== formData.confermaPassword ? 'Le password non coincidono' : ''
-            }));
-        }
-    };
-
-    const handleBlur = (e) => {
-        const { name, value } = e.target;
-        setTouched(prev => ({ ...prev, [name]: true }));
-        let err = '';
-        if (name === 'email') err = validateEmail(value);
-        else if (name === 'newPassword') err = validatePassword(value);
-        else if (name === 'confermaPassword') err = value !== formData.newPassword ? 'Le password non coincidono' : '';
-        setErrors(prev => ({ ...prev, [name]: err }));
-    };
-
-    const handleSubmit = async (e) => {
+    // Step 1: Invia link di recupero via email
+    const handleSendRecoveryEmail = async (e) => {
         e.preventDefault();
-        const emailErr = validateEmail(formData.email);
-        const pwErr = validatePassword(formData.newPassword);
-        const confErr = formData.newPassword !== formData.confermaPassword ? 'Le password non coincidono' : '';
-
-        if (emailErr || pwErr || confErr) {
-            setErrors({ email: emailErr, newPassword: pwErr, confermaPassword: confErr });
-            setTouched({ email: true, newPassword: true, confermaPassword: true });
+        const err = validateEmail(email);
+        if (err) {
+            setEmailError(err);
+            setEmailTouched(true);
             return;
         }
 
         setIsLoading(true);
         setMessage('');
+
         try {
-            const res = await api.post('/api/auth/reset-password', {
-                email: formData.email,
-                new_password: formData.newPassword
+            const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+                redirectTo: `${window.location.origin}/forgot`
             });
-            setMessage(res.data.message);
-            setSuccess(true);
+
+            if (error) throw error;
+
+            setEmailSentSuccess(true);
+            setMessage(`Abbiamo inviato un link sicuro all'indirizzo ${email}. Controlla la tua casella di posta per reimpostare la password.`);
         } catch (err) {
-            setMessage(err.response?.data?.detail || 'Errore durante il reset della password');
+            setMessage(err.message || 'Impossibile inviare l\'email di recupero. Riprova più tardi.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Step 2: Salva la nuova password dopo il click sul link
+    const handleUpdatePassword = async (e) => {
+        e.preventDefault();
+        const errPw = validatePassword(newPassword);
+        const errConf = newPassword !== confermaPassword ? 'Le password non coincidono' : '';
+
+        if (errPw || errConf) {
+            setPasswordErrors({ newPassword: errPw, confermaPassword: errConf });
+            setPasswordTouched({ newPassword: true, confermaPassword: true });
+            return;
+        }
+
+        setIsLoading(true);
+        setMessage('');
+
+        try {
+            const { error } = await supabase.auth.updateUser({
+                password: newPassword
+            });
+
+            if (error) throw error;
+
+            setPasswordResetSuccess(true);
+            setMessage('La tua password è stata aggiornata con successo!');
+            setTimeout(() => {
+                navigate('/login');
+            }, 2500);
+        } catch (err) {
+            setMessage(err.message || 'Errore durante l\'aggiornamento della password. Il link potrebbe essere scaduto.');
         } finally {
             setIsLoading(false);
         }
@@ -93,15 +135,33 @@ const ForgotPassword = () => {
                             </div>
                             <h1>Albert</h1>
                         </div>
-                        <p className="forgot-subtitle">Recupera la tua password</p>
-                        {!success && (
+
+                        <p className="forgot-subtitle">
+                            {isRecoveryMode ? 'Imposta Nuova Password' : 'Password Dimenticata'}
+                        </p>
+
+                        {!emailSentSuccess && !passwordResetSuccess && (
                             <p className="forgot-desc">
-                                Inserisci la tua email e scegli una nuova password.
+                                {isRecoveryMode
+                                    ? 'Inserisci e conferma la tua nuova password.'
+                                    : 'Inserisci la tua email. Ti invieremo un link sicuro per reimpostarla.'}
                             </p>
                         )}
                     </div>
 
-                    {success ? (
+                    {/* STATO: Email inviata con successo */}
+                    {emailSentSuccess ? (
+                        <div className="forgot-success">
+                            <div className="success-icon">
+                                <svg viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                                </svg>
+                            </div>
+                            <p>{message}</p>
+                            <Link to="/login" className="forgot-back-link">Torna al Login</Link>
+                        </div>
+                    ) : passwordResetSuccess ? (
+                        /* STATO: Password aggiornata con successo */
                         <div className="forgot-success">
                             <div className="success-icon">
                                 <svg viewBox="0 0 24 24" fill="currentColor">
@@ -109,55 +169,77 @@ const ForgotPassword = () => {
                                 </svg>
                             </div>
                             <p>{message}</p>
-                            <Link to="/login" className="forgot-back-link">Torna al login</Link>
+                            <Link to="/login" className="forgot-back-link">Vai al Login</Link>
                         </div>
-                    ) : (
-                        <form onSubmit={handleSubmit} className="forgot-form" noValidate>
-                            <div className="form-group">
-                                <label htmlFor="email" className="form-label">Email</label>
-                                <div className="input-wrapper">
-                                    <input
-                                        type="email" id="email" name="email"
-                                        className={`form-control ${errors.email ? 'error' : ''} ${touched.email && !errors.email && formData.email ? 'success' : ''}`}
-                                        placeholder="Inserisci la tua email"
-                                        value={formData.email}
-                                        onChange={handleChange} onBlur={handleBlur} required
-                                    />
-                                    <div className="input-icon">
-                                        <svg viewBox="0 0 24 24" fill="currentColor">
-                                            <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
-                                        </svg>
-                                    </div>
-                                </div>
-                                {errors.email && touched.email && <div className="field-error">{errors.email}</div>}
-                            </div>
-
+                    ) : isRecoveryMode ? (
+                        /* STEP 2: Form per inserire la nuova password */
+                        <form onSubmit={handleUpdatePassword} className="forgot-form" noValidate>
                             <div className="form-group">
                                 <label htmlFor="newPassword" className="form-label">Nuova Password</label>
                                 <div className="input-wrapper">
                                     <input
-                                        type="password" id="newPassword" name="newPassword"
-                                        className={`form-control ${errors.newPassword ? 'error' : ''} ${touched.newPassword && !errors.newPassword && formData.newPassword ? 'success' : ''}`}
-                                        placeholder="Scegli una nuova password"
-                                        value={formData.newPassword}
-                                        onChange={handleChange} onBlur={handleBlur} required
+                                        type={showPassword ? 'text' : 'password'}
+                                        id="newPassword"
+                                        name="newPassword"
+                                        className={`form-control ${passwordErrors.newPassword ? 'error' : ''}`}
+                                        placeholder="Minimo 8 caratteri"
+                                        value={newPassword}
+                                        onChange={(e) => {
+                                            setNewPassword(e.target.value);
+                                            if (passwordTouched.newPassword) setPasswordErrors(prev => ({ ...prev, newPassword: validatePassword(e.target.value) }));
+                                        }}
+                                        onBlur={() => {
+                                            setPasswordTouched(prev => ({ ...prev, newPassword: true }));
+                                            setPasswordErrors(prev => ({ ...prev, newPassword: validatePassword(newPassword) }));
+                                        }}
+                                        required
                                     />
+                                    <button
+                                        type="button"
+                                        className="password-toggle"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}
+                                    >
+                                        {showPassword ? '👁️' : '🙈'}
+                                    </button>
                                 </div>
-                                {errors.newPassword && touched.newPassword && <div className="field-error">{errors.newPassword}</div>}
+                                {passwordErrors.newPassword && passwordTouched.newPassword && (
+                                    <div className="field-error">{passwordErrors.newPassword}</div>
+                                )}
                             </div>
 
                             <div className="form-group">
-                                <label htmlFor="confermaPassword" className="form-label">Conferma Password</label>
+                                <label htmlFor="confermaPassword" className="form-label">Conferma Nuova Password</label>
                                 <div className="input-wrapper">
                                     <input
-                                        type="password" id="confermaPassword" name="confermaPassword"
-                                        className={`form-control ${errors.confermaPassword ? 'error' : ''} ${touched.confermaPassword && !errors.confermaPassword && formData.confermaPassword ? 'success' : ''}`}
+                                        type={showPassword ? 'text' : 'password'}
+                                        id="confermaPassword"
+                                        name="confermaPassword"
+                                        className={`form-control ${passwordErrors.confermaPassword ? 'error' : ''}`}
                                         placeholder="Ripeti la nuova password"
-                                        value={formData.confermaPassword}
-                                        onChange={handleChange} onBlur={handleBlur} required
+                                        value={confermaPassword}
+                                        onChange={(e) => {
+                                            setConfermaPassword(e.target.value);
+                                            if (passwordTouched.confermaPassword) setPasswordErrors(prev => ({ ...prev, confermaPassword: e.target.value !== newPassword ? 'Le password non coincidono' : '' }));
+                                        }}
+                                        onBlur={() => {
+                                            setPasswordTouched(prev => ({ ...prev, confermaPassword: true }));
+                                            setPasswordErrors(prev => ({ ...prev, confermaPassword: confermaPassword !== newPassword ? 'Le password non coincidono' : '' }));
+                                        }}
+                                        required
                                     />
+                                    <button
+                                        type="button"
+                                        className="password-toggle"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}
+                                    >
+                                        {showPassword ? '👁️' : '🙈'}
+                                    </button>
                                 </div>
-                                {errors.confermaPassword && touched.confermaPassword && <div className="field-error">{errors.confermaPassword}</div>}
+                                {passwordErrors.confermaPassword && passwordTouched.confermaPassword && (
+                                    <div className="field-error">{passwordErrors.confermaPassword}</div>
+                                )}
                             </div>
 
                             <button
@@ -165,22 +247,63 @@ const ForgotPassword = () => {
                                 className={`forgot-button ${isLoading ? 'loading' : ''}`}
                                 disabled={isLoading}
                             >
-                                {isLoading ? <><div className="spinner"></div>Aggiornamento...</> : 'Aggiorna Password'}
+                                {isLoading ? <><div className="spinner"></div>Salvataggio...</> : 'Salva Nuova Password'}
                             </button>
 
-                            {message && !success && (
-                                <div className="message error">
-                                    <svg viewBox="0 0 24 24" fill="currentColor">
-                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-                                    </svg>
-                                    {message}
+                            {message && (
+                                <div className="message error">{message}</div>
+                            )}
+                        </form>
+                    ) : (
+                        /* STEP 1: Form per richiedere il link via email */
+                        <form onSubmit={handleSendRecoveryEmail} className="forgot-form" noValidate>
+                            <div className="form-group">
+                                <label htmlFor="email" className="form-label">La tua Email</label>
+                                <div className="input-wrapper">
+                                    <input
+                                        type="email"
+                                        id="email"
+                                        name="email"
+                                        className={`form-control ${emailError ? 'error' : ''}`}
+                                        placeholder="Inserisci l'email del tuo account"
+                                        value={email}
+                                        onChange={(e) => {
+                                            setEmail(e.target.value);
+                                            if (emailTouched) setEmailError(validateEmail(e.target.value));
+                                        }}
+                                        onBlur={() => {
+                                            setEmailTouched(true);
+                                            setEmailError(validateEmail(email));
+                                        }}
+                                        required
+                                    />
+                                    <div className="input-icon">
+                                        <svg viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                                        </svg>
+                                    </div>
                                 </div>
+                                {emailError && emailTouched && (
+                                    <div className="field-error">{emailError}</div>
+                                )}
+                            </div>
+
+                            <button
+                                type="submit"
+                                className={`forgot-button ${isLoading ? 'loading' : ''}`}
+                                disabled={isLoading}
+                            >
+                                {isLoading ? <><div className="spinner"></div>Invio in corso...</> : 'Invia Link di Recupero'}
+                            </button>
+
+                            {message && (
+                                <div className="message error">{message}</div>
                             )}
                         </form>
                     )}
 
                     <div className="forgot-footer">
-                        <Link to="/login">Torna al login</Link>
+                        <Link to="/login">← Torna alla pagina di accesso</Link>
                     </div>
                 </div>
             </div>

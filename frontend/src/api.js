@@ -27,4 +27,21 @@ api.interceptors.request.use(config => {
     return config;
 });
 
+// Interceptor risposta: se il token è scaduto (401), rimuovilo e reindirizza al login
+api.interceptors.response.use(
+    response => response,
+    error => {
+        if (error.response?.status === 401) {
+            const isAuthRoute = window.location.pathname.includes('/login') ||
+                                window.location.pathname.includes('/registrazione') ||
+                                window.location.pathname.includes('/forgot');
+            if (!isAuthRoute && !window.location.hash.includes('access_token')) {
+                localStorage.removeItem('access_token');
+                window.location.href = '/login';
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
 export default api;

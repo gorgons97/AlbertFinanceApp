@@ -59,10 +59,11 @@ class Utente(Base):
     __tablename__ = "utenti"
 
     id_utente      = Column(Integer, primary_key=True, index=True)
+    supabase_uid   = Column(String(64), unique=True, index=True, nullable=True)
     nome           = Column(String, index=True)
     cognome        = Column(String, index=True)
     email          = Column(String, unique=True, index=True)
-    password_hash  = Column(String)
+    password_hash  = Column(String, nullable=True)
     data_creazione = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relazioni

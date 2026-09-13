@@ -516,3 +516,67 @@
   caret-color: #111827;
   transition: background-color 5000s ease-in-out 0s;
 }
+
+/* Pulsante Google OAuth e Divisore */
+.google-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #ffffff;
+  color: #374151;
+  border: 1.5px solid #d1d5db;
+  border-radius: var(--radius-md, 0.5rem);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast, 150ms);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 0.5rem;
+}
+
+.google-btn:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  box-shadow: var(--shadow-md);
+}
+
+.google-btn:active {
+  transform: scale(0.99);
+}
+
+.google-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.google-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  margin: 1.25rem 0;
+  text-align: center;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--gray-200, #e5e7eb);
+}
+
+.auth-divider span {
+  padding: 0 0.75rem;
+  color: var(--gray-400, #9ca3af);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../api';
+import supabase from '../../supabase';
 import Sidebar from './Sidebar';
 import Categorie from './Categorie';
 import Portafogli from './Portafogli';
@@ -28,20 +29,94 @@ const Dashboard = () => {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [activePage, setActivePage] = useState('dashboard');
     const [nonLette, setNonLette] = useState(0);
+    const [authReady, setAuthReady] = useState(false);
 
     useEffect(() => {
-        if (!localStorage.getItem('access_token')) navigate('/login', { replace: true });
+        let isMounted = true;
+
+        const checkAuth = async () => {
+            try {
+                // 1. Controlla prima se c'è un token legacy nel localStorage
+                const legacyToken = localStorage.getItem('access_token');
+                
+                // 2. Attendi un momento se c'è un parametro OAuth nell'URL (per dare tempo a Supabase di elaborarlo)
+                const isOAuthCallback = window.location.hash.includes('access_token') || window.location.search.includes('code=');
+                
+                let session = null;
+                
+                if (isOAuthCallback) {
+                    // Attendi che Supabase completi lo scambio del codice PKCE o l'estrazione dell'hash
+                    session = await new Promise(resolve => {
+                        const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
+                            if (sess?.access_token) {
+                                sub?.subscription?.unsubscribe();
+                                resolve(sess);
+                            }
+                        });
+                        // Fallback: controlla getSession() direttamente dopo un breve ritardo se l'evento è già scattato
+                        setTimeout(async () => {
+                            sub?.subscription?.unsubscribe();
+                            const { data } = await supabase.auth.getSession();
+                            resolve(data.session);
+                        }, 2500);
+                    });
+                } else {
+                    const { data } = await supabase.auth.getSession();
+                    session = data.session;
+                }
+
+                let activeToken = session?.access_token;
+
+                // Se c'è una sessione Supabase attiva, ESSA HA SEMPRE LA PRECEDENZA!
+                if (activeToken) {
+                    localStorage.setItem('access_token', activeToken);
+                    await api.get('/api/auth/me');
+                    if (window.location.hash) {
+                        window.history.replaceState(null, '', window.location.pathname);
+                    }
+                    if (isMounted) setAuthReady(true);
+                    return;
+                }
+
+                // 2. Solo se NON c'è alcuna sessione Supabase attiva, controlla eventuale token salvato in localStorage
+                const token = localStorage.getItem('access_token');
+                if (token) {
+                    try {
+                        await api.get('/api/auth/me');
+                        if (isMounted) setAuthReady(true);
+                        return;
+                    } catch {
+                        localStorage.removeItem('access_token');
+                    }
+                }
+
+                // Nessuna sessione valida
+                navigate('/login', { replace: true });
+            } catch (err) {
+                console.error("Errore autenticazione dashboard:", err);
+                localStorage.removeItem('access_token');
+                navigate('/login', { replace: true });
+            }
+        };
+
+        checkAuth();
+        return () => { isMounted = false; };
     }, [navigate]);
 
-    // Carica il numero di notifiche non lette
+    // Carica il numero di notifiche non lette solo quando l'autenticazione è confermata
     const caricaNonLette = useCallback(async () => {
+        if (!authReady) return;
         try {
             const res = await api.get('/api/notifiche/');
             setNonLette(res.data.non_lette || 0);
         } catch {}
-    }, []);
+    }, [authReady]);
 
-    useEffect(() => { caricaNonLette(); }, [caricaNonLette]);
+    useEffect(() => {
+        if (authReady) {
+            caricaNonLette();
+        }
+    }, [authReady, caricaNonLette]);
 
     useEffect(() => {
         const h = () => { if (window.innerWidth < 768) setSidebarCollapsed(true); };
@@ -54,7 +129,10 @@ const Dashboard = () => {
         console.log(`hai premuto il pulsante ${PAGE_TITLES[id] || id}`);
     };
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        try {
+            await supabase.auth.signOut();
+        } catch {}
         localStorage.removeItem('access_token');
         localStorage.removeItem('rememberEmail');
         navigate('/login', { replace: true });
@@ -77,6 +155,17 @@ const Dashboard = () => {
             default:              return <DashboardHome />;
         }
     };
+
+    // Schermata di caricamento finché la sessione e l'utente non sono agganciati con certezza
+    if (!authReady) {
+        return (
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#f8fafc' }}>
+                <div style={{ width: '42px', height: '42px', border: '4px solid #e2e8f0', borderTop: '4px solid #3b82f6', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></div>
+                <p style={{ marginTop: '16px', color: '#64748b', fontSize: '1rem', fontWeight: '500' }}>Caricamento sessione...</p>
+                <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+            </div>
+        );
+    }
 
     return (
         <div className="dashboard-layout">
