@@ -213,17 +213,19 @@ async def importa_backup(
             if not cat:
                 cat = Categoria(nome="Trasferimento in entrata", tipo=3); db.add(cat); db.flush()
             # Transazione
-            tr = Transazione(
-                id_utente=user.id_utente,
-                id_portafoglio=pf_dest.id_portafoglio,
-                id_categoria=cat.id_categoria,
-                tipo=tipo_tr,
-                direzione=direzione,
-                importo=importo,
-                descrizione=nota,
-                data_transazione=data_tr,
+            entrata = Transazione(
+                      id_utente=user.id_utente,
+                      id_portafoglio=pf_dest.id_portafoglio,
+                      id_categoria=cat.id_categoria,
+                      tipo=tipo_tr,
+                      direzione=direzione,
+                      importo=importo,
+                      descrizione=nota,
+                      data_transazione=data_tr,
             )
-            db.add(tr)
+            db.add(entrata); 
+            db.flush()
+            tr.id_transazione_collegata = entrata.id_transazione
 
         created_tr += 2 if tipo_tr == 3 else 1
 
