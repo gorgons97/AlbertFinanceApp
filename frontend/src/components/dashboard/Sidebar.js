@@ -21,7 +21,6 @@ const Sidebar = ({ collapsed, onToggle, onMenuClick, onLogout, mobileOpen, onMob
             return;
         }
         onMenuClick && onMenuClick(id);
-        console.log(`hai premuto il pulsante ${label}`);
         if (mobileOpen) onMobileClose && onMobileClose();
     };
 
