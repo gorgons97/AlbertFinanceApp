@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import select
-from datetime import datetime
+from datetime import datetime, timezone
 from ..database import get_db
 from ..models import (
     Notifica, InvitoPortafoglio, Utente,
@@ -113,7 +113,7 @@ def accetta_invito(
 
     inv.stato = 2  # accettato
     inv.id_invitato = user.id_utente
-    inv.data_risposta = datetime.utcnow()
+    inv.data_risposta = datetime.now(timezone.utc)
 
     # Elimina la notifica di invito collegata (non deve restare nella sezione)
     if inv.id_invito:
@@ -148,7 +148,7 @@ def rifiuta_invito(
         raise HTTPException(403, "Invito destinato a un'altra email")
 
     inv.stato = 3  # rifiutato
-    inv.data_risposta = datetime.utcnow()
+    inv.data_risposta = datetime.now(timezone.utc)
 
     # Elimina la notifica di invito collegata (non deve restare nella sezione)
     n = db.query(Notifica).filter(

@@ -70,7 +70,7 @@ services:
       GOTRUE_DB_DRIVER: postgres
       GOTRUE_DB_DATABASE_URL: postgresql://albert:${POSTGRES_PASSWORD}@db:5432/albert_app?sslmode=disable&search_path=auth
       GOTRUE_SITE_URL: ${GOTRUE_SITE_URL}
-      GOTRUE_URI_ALLOW_LIST: "*"
+      GOTRUE_URI_ALLOW_LIST: "${GOTRUE_URI_ALLOW_LIST}"
       GOTRUE_DISABLE_SIGNUP: "false"
       GOTRUE_JWT_SECRET: ${SECRET_KEY}
       GOTRUE_JWT_EXP: 86400

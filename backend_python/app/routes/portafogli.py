@@ -234,6 +234,9 @@ def rimuovi_portafoglio(
     if _ruolo_utente(db, user.id_utente, portafoglio_id) != 'proprietario':
         raise HTTPException(status_code=403, detail="Solo il proprietario puo' eliminare il portafoglio")
 
+    # Salvo il nome prima dell'eliminazione per evitare ObjectDeletedError dopo il commit
+    nome_pf = pf.nome
+
     # Delega al servizio di eliminazione, che gestisce proprieta' e orfani:
     #  - se l'owner e' l'UNICO membro      -> elimina la riga portafoglio (e le sue transazioni);
     #  - se l'owner ha cointestatari       -> trasferisce la proprieta' al membro piu' anziano
@@ -246,16 +249,16 @@ def rimuovi_portafoglio(
 
     esito = risultato["esito"]
     if esito == "eliminato":
-        return {"message": f"Portafoglio '{pf.nome}' eliminato"}
+        return {"message": f"Portafoglio '{nome_pf}' eliminato"}
     if esito == "proprieta_trasferita":
         return {
-            "message": f"Proprieta' del portafoglio '{pf.nome}' trasferita "
+            "message": f"Proprieta' del portafoglio '{nome_pf}' trasferita "
                        f"al cointestatario piu' anziano",
             "esito": "proprieta_trasferita",
             "id_portafoglio": pf.id_portafoglio,
             "nuovo_proprietario": risultato["nuovo_proprietario"],
         }
-    return {"message": f"Sei uscito dal portafoglio '{pf.nome}'", "esito": "uscito"}
+    return {"message": f"Sei uscito dal portafoglio '{nome_pf}'", "esito": "uscito"}
 
 
 # POST /api/portafogli/{id}/invita — invita un utente (per email)

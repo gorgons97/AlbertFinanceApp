@@ -126,7 +126,6 @@ const Dashboard = () => {
 
     const handleMenuClick = (id) => {
         setActivePage(id);
-        console.log(`hai premuto il pulsante ${PAGE_TITLES[id] || id}`);
     };
 
     const handleLogout = async () => {

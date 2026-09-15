@@ -77,8 +77,6 @@ const Transazioni = () => {
             data_fine: filtri.data_fine !== undefined ? filtri.data_fine : filterDataFine,
             mese: filtri.mese !== undefined ? filtri.mese : filterMese
         };
-        console.log(filterDataInizio)
-        console.log(filterDataFine)
         if (f.tipo) params.append('tipo', f.tipo);
         if (f.id_portafoglio) params.append('id_portafoglio', f.id_portafoglio);
         if (f.id_categoria) params.append('id_categoria', f.id_categoria);

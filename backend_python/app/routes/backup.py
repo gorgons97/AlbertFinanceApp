@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from datetime import date as date_type, datetime
 from typing import Optional
 from io import BytesIO, StringIO
-import csv, io
+import csv, io, os
 from ..database import get_db
 from ..services.saldi import ricalcola_saldo
 from ..models import (
@@ -18,12 +18,13 @@ from .auth import get_current_user
 router = APIRouter()
 
 # ============================================================
-# DEBUG — metti False per disattivare le stampe di debug
+# DEBUG — imposta IMPORT_DEBUG=true come variabile d'ambiente per attivare
 # Le stampe escono su stdout del container: si leggono con
 #   docker logs -f albert_backend        (in tempo reale)
 #   docker logs --tail 100 albert_backend (ultime 100 righe)
 # ============================================================
-DEBUG = True
+DEBUG = os.environ.get("IMPORT_DEBUG", "false").lower() == "true"
+
 
 
 def _debug(msg: str):
@@ -213,17 +214,19 @@ async def importa_backup(
             if not cat:
                 cat = Categoria(nome="Trasferimento in entrata", tipo=3); db.add(cat); db.flush()
             # Transazione
-            tr = Transazione(
-                id_utente=user.id_utente,
-                id_portafoglio=pf_dest.id_portafoglio,
-                id_categoria=cat.id_categoria,
-                tipo=tipo_tr,
-                direzione=direzione,
-                importo=importo,
-                descrizione=nota,
-                data_transazione=data_tr,
+            entrata = Transazione(
+                      id_utente=user.id_utente,
+                      id_portafoglio=pf_dest.id_portafoglio,
+                      id_categoria=cat.id_categoria,
+                      tipo=tipo_tr,
+                      direzione=direzione,
+                      importo=importo,
+                      descrizione=nota,
+                      data_transazione=data_tr,
             )
-            db.add(tr)
+            db.add(entrata); 
+            db.flush()
+            tr.id_transazione_collegata = entrata.id_transazione
 
         created_tr += 2 if tipo_tr == 3 else 1
 
@@ -272,7 +275,9 @@ def esporta_backup(
     al: Optional[str] = Query(None, description="Data fine YYYY-MM-DD"),
 ):
     """Esporta tutte le transazioni in CSV, con i trasferimenti su una singola riga."""
-    transazioni = db.query(Transazione).filter(
+    # Usare 'query' come nome variabile per mantenere la coerenza con i filtri
+    portafogli_ids = {pf.id_portafoglio for pf in user.portafogli}
+    query = db.query(Transazione).filter(
         Transazione.id_utente == user.id_utente,
         Transazione.nascosto == False,
     )
@@ -293,6 +298,9 @@ def esporta_backup(
     if id_portafogli:
         try:
             pf_ids = [int(x) for x in id_portafogli.split(",") if x.strip()]
+            # Verifica ownership: solo portafogli dell'utente (fix criticità #11)
+            if not all(p in portafogli_ids for p in pf_ids):
+                raise HTTPException(403, "Uno o più portafogli non appartengono all'utente")
             if pf_ids:
                 query = query.filter(Transazione.id_portafoglio.in_(pf_ids))
         except ValueError:
@@ -309,6 +317,7 @@ def esporta_backup(
             pass
 
     transazioni = query.order_by(Transazione.data_transazione.asc()).all()
+
 
     output = io.StringIO()
     writer = csv.writer(output)
