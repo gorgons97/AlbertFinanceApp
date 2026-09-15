@@ -1,20 +1,29 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Header
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 import os
+import logging
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from ..database import get_db
 from ..models import Utente, Portafoglio
 
+logger = logging.getLogger(__name__)
+
 # Configurazione JWT
 # In produzione SECRET_KEY va impostata come variabile d'ambiente (vedi docker-compose / .env):
 #   SECRET_KEY="una-stringa-lunga-e-casuale"
-# Il fallback serve solo per lo sviluppo locale.
-SECRET_KEY = os.environ.get("SECRET_KEY", "chiave-di-sviluppo-NON-usare-in-produzione")
+_SECRET_KEY_DEFAULT = "chiave-di-sviluppo-NON-usare-in-produzione"
+SECRET_KEY = os.environ.get("SECRET_KEY", _SECRET_KEY_DEFAULT)
+if SECRET_KEY == _SECRET_KEY_DEFAULT:
+    logger.warning(
+        "ATTENZIONE: SECRET_KEY non impostata — si sta usando la chiave di sviluppo. "
+        "NON usare in produzione!"
+    )
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 ore
+JWT_AUDIENCE = "authenticated"
 
 router = APIRouter()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__truncate_error=True)
@@ -48,28 +57,25 @@ class ChangePasswordRequest(BaseModel):
 
 
 def create_access_token(data: dict) -> str:
-    """Genera un token JWT con scadenza."""
+    """Genera un token JWT con scadenza e audience 'authenticated' (compatibile con GoTrue)."""
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
+    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire, "aud": JWT_AUDIENCE})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
 # Dipendenza per proteggere le route: estrae l'utente dal token JWT (GoTrue o legacy)
 def get_current_user(authorization: str = Header(None), db: Session = Depends(get_db)) -> Utente:
     if not authorization or not authorization.startswith("Bearer "):
-        print(f"[AUTH DEBUG] Header non Bearer: {authorization}")
         raise HTTPException(status_code=401, detail="Token mancante")
     token = authorization.split(" ")[1]
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM], options={"verify_aud": False})
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM], audience=JWT_AUDIENCE)
         user_sub = payload.get("sub")
         if not user_sub:
-            print(f"[AUTH DEBUG] Subject mancante nel payload: {payload}")
-            raise HTTPException(status_code=401, detail="Token non valido: subject mancante")
-    except (JWTError, ValueError, TypeError) as e:
-        print(f"[AUTH DEBUG] jwt.decode fallito: {e} - Token: {token[:30]}...")
-        raise HTTPException(status_code=401, detail=f"Token non valido: {str(e)}")
+            raise HTTPException(status_code=401, detail="Token non valido")
+    except (JWTError, ValueError, TypeError):
+        raise HTTPException(status_code=401, detail="Token non valido")
 
     user_sub_str = str(user_sub)
 

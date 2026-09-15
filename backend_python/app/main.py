@@ -1,7 +1,10 @@
 import os
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .routes import auth, categorie, portafogli, transazioni, backup, notifiche, eliminazione
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -13,6 +16,10 @@ if cors_env:
     allow_origins = [o.strip() for o in cors_env.split(",") if o.strip()]
 else:
     allow_origins = ["*"]
+    logger.warning(
+        "ATTENZIONE: CORS_ORIGINS non impostata — tutte le origini cross-origin sono permesse! "
+        "Imposta CORS_ORIGINS in produzione."
+    )
 
 app.add_middleware(
     CORSMiddleware,

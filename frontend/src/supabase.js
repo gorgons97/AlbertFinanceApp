@@ -11,8 +11,16 @@ if (window.location.protocol === 'https:') {
 }
 
 // Anon Key (JWT generato con SECRET_KEY con claim role: anon)
-const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY
-    || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg5MjEwOTExLCJleHAiOjIxMDQ1NzA5MTF9.ruKCQHSEEMgO63PWdl2MP2T0jtdccjfYavonvHSprbA';
+// DEVE essere impostata come variabile d'ambiente REACT_APP_SUPABASE_ANON_KEY
+const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
+if (!supabaseAnonKey) {
+    // In produzione questo errore indica una configurazione mancante.
+    // In sviluppo: imposta REACT_APP_SUPABASE_ANON_KEY nel file .env
+    console.error(
+        '[Albert] REACT_APP_SUPABASE_ANON_KEY non configurata. ' +
+        'Imposta la variabile nel file .env o nel docker-compose.'
+    );
+}
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
