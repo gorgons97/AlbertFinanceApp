@@ -50,6 +50,7 @@ services:
       # Vuoto: le chiamate del frontend hanno già il prefisso /api e in HTTPS
       # diventano same-origin -> nginx inoltra al backend.
       REACT_APP_API_BASE: ""
+      REACT_APP_SUPABASE_ANON_KEY: "${REACT_APP_SUPABASE_ANON_KEY}"
     depends_on:
       - backend
     restart: unless-stopped

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import supabase from '../../supabase';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import './ForgotPassword.css';
 
 const ForgotPassword = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     // Modalità: false = richiesta link email (Step 1), true = impostazione nuova password (Step 2)
     const [isRecoveryMode, setIsRecoveryMode] = useState(false);
@@ -48,14 +50,14 @@ const ForgotPassword = () => {
     }, []);
 
     const validateEmail = (val) => {
-        if (!val) return 'Email richiesta';
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) return 'Inserisci un indirizzo email valido';
+        if (!val) return t('Email è richiesta');
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) return t('Inserisci un indirizzo email valido');
         return '';
     };
 
     const validatePassword = (pw) => {
-        if (!pw) return 'Password richiesta';
-        if (pw.length < 8) return 'La password deve avere almeno 8 caratteri';
+        if (!pw) return t('Password è richiesta');
+        if (pw.length < 8) return t('La password deve avere almeno 8 caratteri');
         return '';
     };
 
@@ -80,9 +82,9 @@ const ForgotPassword = () => {
             if (error) throw error;
 
             setEmailSentSuccess(true);
-            setMessage(`Abbiamo inviato un link sicuro all'indirizzo ${email}. Controlla la tua casella di posta per reimpostare la password.`);
+            setMessage(t("Abbiamo inviato un link sicuro all'indirizzo email."));
         } catch (err) {
-            setMessage(err.message || 'Impossibile inviare l\'email di recupero. Riprova più tardi.');
+            setMessage(err.message || t("Impossibile inviare l'email di recupero. Riprova più tardi."));
         } finally {
             setIsLoading(false);
         }
@@ -92,7 +94,7 @@ const ForgotPassword = () => {
     const handleUpdatePassword = async (e) => {
         e.preventDefault();
         const errPw = validatePassword(newPassword);
-        const errConf = newPassword !== confermaPassword ? 'Le password non coincidono' : '';
+        const errConf = newPassword !== confermaPassword ? t('Le password non coincidono') : '';
 
         if (errPw || errConf) {
             setPasswordErrors({ newPassword: errPw, confermaPassword: errConf });
@@ -111,12 +113,12 @@ const ForgotPassword = () => {
             if (error) throw error;
 
             setPasswordResetSuccess(true);
-            setMessage('La tua password è stata aggiornata con successo!');
+            setMessage(t('La tua password è stata aggiornata con successo!'));
             setTimeout(() => {
                 navigate('/login');
             }, 2500);
         } catch (err) {
-            setMessage(err.message || 'Errore durante l\'aggiornamento della password. Il link potrebbe essere scaduto.');
+            setMessage(err.message || t("Errore durante l'aggiornamento della password. Il link potrebbe essere scaduto."));
         } finally {
             setIsLoading(false);
         }
@@ -137,14 +139,14 @@ const ForgotPassword = () => {
                         </div>
 
                         <p className="forgot-subtitle">
-                            {isRecoveryMode ? 'Imposta Nuova Password' : 'Password Dimenticata'}
+                            {isRecoveryMode ? t('Imposta Nuova Password') : t('Password Dimenticata')}
                         </p>
 
                         {!emailSentSuccess && !passwordResetSuccess && (
                             <p className="forgot-desc">
                                 {isRecoveryMode
-                                    ? 'Inserisci e conferma la tua nuova password.'
-                                    : 'Inserisci la tua email. Ti invieremo un link sicuro per reimpostarla.'}
+                                    ? t('Inserisci e conferma la tua nuova password.')
+                                    : t('Inserisci la tua email. Ti invieremo un link sicuro per reimpostarla.')}
                             </p>
                         )}
                     </div>
@@ -158,7 +160,7 @@ const ForgotPassword = () => {
                                 </svg>
                             </div>
                             <p>{message}</p>
-                            <Link to="/login" className="forgot-back-link">Torna al Login</Link>
+                            <Link to="/login" className="forgot-back-link">{t('Torna al Login')}</Link>
                         </div>
                     ) : passwordResetSuccess ? (
                         /* STATO: Password aggiornata con successo */
@@ -169,20 +171,20 @@ const ForgotPassword = () => {
                                 </svg>
                             </div>
                             <p>{message}</p>
-                            <Link to="/login" className="forgot-back-link">Vai al Login</Link>
+                            <Link to="/login" className="forgot-back-link">{t('Vai al Login')}</Link>
                         </div>
                     ) : isRecoveryMode ? (
                         /* STEP 2: Form per inserire la nuova password */
                         <form onSubmit={handleUpdatePassword} className="forgot-form" noValidate>
                             <div className="form-group">
-                                <label htmlFor="newPassword" className="form-label">Nuova Password</label>
+                                <label htmlFor="newPassword" className="form-label">{t('Nuova Password')}</label>
                                 <div className="input-wrapper">
                                     <input
                                         type={showPassword ? 'text' : 'password'}
                                         id="newPassword"
                                         name="newPassword"
                                         className={`form-control ${passwordErrors.newPassword ? 'error' : ''}`}
-                                        placeholder="Minimo 8 caratteri"
+                                        placeholder={t('Minimo 8 caratteri')}
                                         value={newPassword}
                                         onChange={(e) => {
                                             setNewPassword(e.target.value);
@@ -209,22 +211,22 @@ const ForgotPassword = () => {
                             </div>
 
                             <div className="form-group">
-                                <label htmlFor="confermaPassword" className="form-label">Conferma Nuova Password</label>
+                                <label htmlFor="confermaPassword" className="form-label">{t('Conferma Nuova Password')}</label>
                                 <div className="input-wrapper">
                                     <input
                                         type={showPassword ? 'text' : 'password'}
                                         id="confermaPassword"
                                         name="confermaPassword"
                                         className={`form-control ${passwordErrors.confermaPassword ? 'error' : ''}`}
-                                        placeholder="Ripeti la nuova password"
+                                        placeholder={t('Ripeti la nuova password')}
                                         value={confermaPassword}
                                         onChange={(e) => {
                                             setConfermaPassword(e.target.value);
-                                            if (passwordTouched.confermaPassword) setPasswordErrors(prev => ({ ...prev, confermaPassword: e.target.value !== newPassword ? 'Le password non coincidono' : '' }));
+                                            if (passwordTouched.confermaPassword) setPasswordErrors(prev => ({ ...prev, confermaPassword: e.target.value !== newPassword ? t('Le password non coincidono') : '' }));
                                         }}
                                         onBlur={() => {
                                             setPasswordTouched(prev => ({ ...prev, confermaPassword: true }));
-                                            setPasswordErrors(prev => ({ ...prev, confermaPassword: confermaPassword !== newPassword ? 'Le password non coincidono' : '' }));
+                                            setPasswordErrors(prev => ({ ...prev, confermaPassword: confermaPassword !== newPassword ? t('Le password non coincidono') : '' }));
                                         }}
                                         required
                                     />
@@ -247,7 +249,7 @@ const ForgotPassword = () => {
                                 className={`forgot-button ${isLoading ? 'loading' : ''}`}
                                 disabled={isLoading}
                             >
-                                {isLoading ? <><div className="spinner"></div>Salvataggio...</> : 'Salva Nuova Password'}
+                                {isLoading ? <><div className="spinner"></div>{t('Salvataggio...')}</> : t('Salva Nuova Password')}
                             </button>
 
                             {message && (
@@ -258,14 +260,14 @@ const ForgotPassword = () => {
                         /* STEP 1: Form per richiedere il link via email */
                         <form onSubmit={handleSendRecoveryEmail} className="forgot-form" noValidate>
                             <div className="form-group">
-                                <label htmlFor="email" className="form-label">La tua Email</label>
+                                <label htmlFor="email" className="form-label">{t('La tua Email')}</label>
                                 <div className="input-wrapper">
                                     <input
                                         type="email"
                                         id="email"
                                         name="email"
                                         className={`form-control ${emailError ? 'error' : ''}`}
-                                        placeholder="Inserisci l'email del tuo account"
+                                        placeholder={t("Inserisci l'email del tuo account")}
                                         value={email}
                                         onChange={(e) => {
                                             setEmail(e.target.value);
@@ -293,7 +295,7 @@ const ForgotPassword = () => {
                                 className={`forgot-button ${isLoading ? 'loading' : ''}`}
                                 disabled={isLoading}
                             >
-                                {isLoading ? <><div className="spinner"></div>Invio in corso...</> : 'Invia Link di Recupero'}
+                                {isLoading ? <><div className="spinner"></div>{t('Invio in corso...')}</> : t('Invia Link di Recupero')}
                             </button>
 
                             {message && (
@@ -303,7 +305,7 @@ const ForgotPassword = () => {
                     )}
 
                     <div className="forgot-footer">
-                        <Link to="/login">← Torna alla pagina di accesso</Link>
+                        <Link to="/login">← {t('Torna alla pagina di accesso')}</Link>
                     </div>
                 </div>
             </div>

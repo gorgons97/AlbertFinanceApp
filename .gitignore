@@ -44,6 +44,7 @@ backup/
 *.md
 !ARCHITECTURE.md
 !README.md
+!INSTALLAZIONE.md
 !CONFIGURAZIONE_EMAIL_SMTP.md
 
 # Logs

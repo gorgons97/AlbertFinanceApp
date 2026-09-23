@@ -2,10 +2,13 @@ import React, { useState, useEffect } from 'react';
 import api from '../../api';
 import supabase from '../../supabase';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 import './Login.css';
 
 const Login = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     // Stati per gestire i form data
     const [formData, setFormData] = useState({
         email: '',
@@ -153,7 +156,8 @@ const Login = () => {
             // 2. Fallback trasparente su API legacy se utente pre-migrazione
             const response = await api.post('/api/auth/login', {
                 email: formData.email,
-                password: formData.password
+                password: formData.password,
+                remember_me: rememberMe
             });
             setMessage('Login effettuato con successo!');
             localStorage.setItem('access_token', response.data.access_token);
@@ -235,7 +239,13 @@ const Login = () => {
                             </div>
                             <h1>Albert</h1>
                         </div>
-                        <p className="login-subtitle">Accedi al tuo account</p>
+                        <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
+                            <select onChange={(e) => i18n.changeLanguage(e.target.value)} defaultValue={i18n.language} style={{ padding: '5px', borderRadius: '5px', border: '1px solid #ccc' }}>
+                                <option value="it">IT</option>
+                                <option value="en">EN</option>
+                            </select>
+                        </div>
+                        <p className="login-subtitle">{t('Accedi al tuo account')}</p>
                     </div>
 
                     <button
@@ -250,17 +260,17 @@ const Login = () => {
                             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
                             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
                         </svg>
-                        Accedi con Google
+                        {t('Accedi con Google')}
                     </button>
 
                     <div className="auth-divider">
-                        <span>oppure con email</span>
+                        <span>{t('oppure con email')}</span>
                     </div>
 
                     <form onSubmit={handleLogin} className="login-form" noValidate>
                         <div className="form-group">
                             <label htmlFor="email" className="form-label">
-                                Email
+                                {t('Email')}
                             </label>
                             <div className="input-wrapper">
                                 <input
@@ -292,7 +302,7 @@ const Login = () => {
 
                         <div className="form-group">
                             <label htmlFor="password" className="form-label">
-                                Password
+                                {t('Password')}
                             </label>
                             <div className="input-wrapper">
                                 <input
@@ -300,7 +310,7 @@ const Login = () => {
                                     id="password"
                                     name="password"
                                     className={`form-control ${errors.password ? 'error' : ''} ${touched.password && !errors.password && formData.password ? 'success' : ''}`}
-                                    placeholder="Inserisci la password"
+                                    placeholder={t('Password')}
                                     value={formData.password}
                                     onChange={handleInputChange}
                                     onBlur={handleBlur}
@@ -341,10 +351,10 @@ const Login = () => {
                                     onChange={(e) => setRememberMe(e.target.checked)}
                                 />
                                 <span className="checkmark"></span>
-                                Ricordami
+                                {t('Ricordami')}
                             </label>
                             <Link to="/forgot" className="forgot-password">
-                                Password dimenticata?
+                                {t('Password dimenticata?')}
                             </Link>
                         </div>
 
@@ -359,7 +369,7 @@ const Login = () => {
                                     Accesso in corso...
                                 </>
                             ) : (
-                                'Accedi'
+                                t('Accedi')
                             )}
                         </button>
 
@@ -379,8 +389,8 @@ const Login = () => {
 
                     <div className="login-footer">
                         <p>
-                            Non hai un account? 
-                            <Link to="/register">Registrati</Link>
+                            {t('Non hai un account?')} 
+                            <Link to="/register"> {t('Registrati')}</Link>
                         </p>
                     </div>
                 </div>

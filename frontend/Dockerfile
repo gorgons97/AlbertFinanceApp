@@ -10,7 +10,7 @@ COPY package*.json ./
 # Installa le dipendenze NEL CONTAINER (con permessi Linux corretti)
 # RUN npm ci --only=production --silent
 # Oppure se hai problemi di dipendenze:
-RUN npm install --silent
+RUN npm install --silent --legacy-peer-deps
 
 # Copia il resto del codice del frontend
 COPY . .

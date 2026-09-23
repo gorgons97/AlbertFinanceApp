@@ -44,25 +44,25 @@ class Token(BaseModel):
 class LoginRequest(BaseModel):
     email: str
     password: str
-
+    remember_me: bool = False
 
 class ResetPasswordRequest(BaseModel):
     email: str
     new_password: str
 
-
 class ChangePasswordRequest(BaseModel):
     password_attuale: str
     nuova_password: str
 
-
-def create_access_token(data: dict) -> str:
+def create_access_token(data: dict, expires_delta: timedelta = None) -> str:
     """Genera un token JWT con scadenza e audience 'authenticated' (compatibile con GoTrue)."""
     to_encode = data.copy()
-    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire, "aud": JWT_AUDIENCE})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
 
 # Dipendenza per proteggere le route: estrae l'utente dal token JWT (GoTrue o legacy)
 def get_current_user(authorization: str = Header(None), db: Session = Depends(get_db)) -> Utente:
@@ -190,7 +190,8 @@ def login_utente(login: LoginRequest, db: Session = Depends(get_db)):
     if not pwd_context.verify(login.password, utente.password_hash):
         raise HTTPException(status_code=401, detail="Credenziali non valide")
 
-    token = create_access_token(data={"sub": str(utente.id_utente)})
+    expires_delta = timedelta(days=30) if login.remember_me else None
+    token = create_access_token(data={"sub": str(utente.id_utente)}, expires_delta=expires_delta)
     return {
         "access_token": token,
         "token_type": "bearer",

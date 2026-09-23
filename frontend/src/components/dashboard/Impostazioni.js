@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useRef, useEffect } from 'react';
 import api from '../../api';
 import './Impostazioni.css';
@@ -16,6 +17,7 @@ const FiltriTransazioni = ({
     portafogliDisponibili, portafogli, setPortafogli,
     dal, setDal, al, setAl,
 }) => {
+    const { t } = useTranslation();
     const toggle = (list, setList, v) =>
         setList(list.includes(v) ? list.filter(x => x !== v) : [...list, v]);
 
@@ -41,7 +43,7 @@ const FiltriTransazioni = ({
                     <div className="filtri-gruppo">
                         <span className="filtri-label">Tipo</span>
                         <div className="filtri-chips">
-                            {TIPI.map(t => (
+                            {TIPI.map(tipoItem => (
                                 <label key={t.valore} className="chip">
                                     <input type="checkbox"
                                         checked={tipi.includes(t.valore)}
@@ -53,7 +55,7 @@ const FiltriTransazioni = ({
                     </div>
 
                     <div className="filtri-gruppo">
-                        <span className="filtri-label">Categorie</span>
+                        <span className="filtri-label">{t("Categorie")}</span>
                         <div className="filtri-chips">
                             {categorieDisponibili.length === 0 && <span className="filtri-vuoto">Nessuna categoria</span>}
                             {categorieDisponibili.map(c => (
@@ -68,7 +70,7 @@ const FiltriTransazioni = ({
                     </div>
 
                     <div className="filtri-gruppo">
-                        <span className="filtri-label">Portafogli</span>
+                        <span className="filtri-label">{t("Portafogli")}</span>
                         <div className="filtri-chips">
                             {portafogliDisponibili.length === 0 && <span className="filtri-vuoto">Nessun portafoglio</span>}
                             {portafogliDisponibili.map(p => (
@@ -100,6 +102,7 @@ const FiltriTransazioni = ({
 };
 
 const Impostazioni = ({ onLogout }) => {
+    const { t, i18n } = useTranslation();
     const fileRef = useRef(null);
     const [importing, setImporting] = useState(false);
     const [result, setResult] = useState(null);
@@ -313,6 +316,7 @@ const Impostazioni = ({ onLogout }) => {
         ];
 
         const SEZIONI = [
+            { chiave: 'lingua', icona: '🌍', titolo: t('Lingua'), sottotitolo: 'Cambia la lingua dell\'applicazione / Change app language' },
             { chiave: 'backup', icona: '💾', titolo: 'Backup e Ripristino', sottotitolo: 'Esporta il tuo archivio o importa un backup da file' },
             { chiave: 'password', icona: '🔑', titolo: 'Cambia Password', sottotitolo: 'Aggiorna la password del tuo account' },
             { chiave: 'eliminazione', icona: '🗑', titolo: 'Eliminazione Dati', sottotitolo: 'Azioni irreversibili, richiedono la password' },
@@ -320,7 +324,7 @@ const Impostazioni = ({ onLogout }) => {
 
         return (
             <div className="impostazioni-page">
-                <h2>Impostazioni</h2>
+                <h2>{t("Impostazioni")}</h2>
 
                 <div className="acc-container">
                     {SEZIONI.map(s => (
@@ -340,6 +344,23 @@ const Impostazioni = ({ onLogout }) => {
 
                             {aperta === s.chiave && (
                                 <div className="acc-body">
+                                    {s.chiave === 'lingua' && (
+                                        <>
+                                            <p className="impostazioni-desc">
+                                                Seleziona la tua lingua preferita. / Select your preferred language.
+                                            </p>
+                                            <select 
+                                                value={i18n.language} 
+                                                onChange={(e) => i18n.changeLanguage(e.target.value)}
+                                                className="categorie-input"
+                                                style={{ maxWidth: '300px', display: 'block', marginTop: '10px' }}
+                                            >
+                                                <option value="it">🇮🇹 Italiano</option>
+                                                <option value="en">🇬🇧 English</option>
+                                            </select>
+                                        </>
+                                    )}
+
                                     {s.chiave === 'backup' && (
                                         <>
                                             <p className="impostazioni-desc">
@@ -450,7 +471,7 @@ const Impostazioni = ({ onLogout }) => {
                         />
                         {elimMsg && <div className={`impostazioni-message ${elimMsg.includes('completata') || elimMsg === 'Operazione completata' ? 'success' : 'error'}`}>{elimMsg}</div>}
                         <div className="modal-actions">
-                            <button className="modal-btn modal-btn-cancel" onClick={chiudiModalElim} disabled={elimBusy}>Annulla</button>
+                            <button className="modal-btn modal-btn-cancel" onClick={chiudiModalElim} disabled={elimBusy}>{t("Annulla")}</button>
                             <button className="modal-btn modal-btn-danger" onClick={confermaEliminazione} disabled={elimBusy}>
                                 {elimBusy ? 'Eliminazione...' : 'Conferma eliminazione'}
                             </button>
@@ -485,7 +506,7 @@ const Impostazioni = ({ onLogout }) => {
                         />
                         {elimTransMsg && <div className={`impostazioni-message ${elimTransMsg.includes('eliminate') || elimTransMsg === 'Operazione completata' ? 'success' : 'error'}`}>{elimTransMsg}</div>}
                         <div className="modal-actions">
-                            <button className="modal-btn modal-btn-cancel" onClick={() => setElimTransOpen(false)} disabled={elimTransBusy}>Annulla</button>
+                            <button className="modal-btn modal-btn-cancel" onClick={() => setElimTransOpen(false)} disabled={elimTransBusy}>{t("Annulla")}</button>
                             <button className="modal-btn modal-btn-danger" onClick={confermaElimTrans} disabled={elimTransBusy}>
                                 {elimTransBusy ? 'Eliminazione...' : 'Conferma eliminazione'}
                             </button>
@@ -511,7 +532,7 @@ const Impostazioni = ({ onLogout }) => {
                             al={exportAl} setAl={setExportAl}
                         />
                         <div className="modal-actions">
-                            <button className="modal-btn modal-btn-cancel" onClick={() => setExportOpen(false)} disabled={exportBusy}>Annulla</button>
+                            <button className="modal-btn modal-btn-cancel" onClick={() => setExportOpen(false)} disabled={exportBusy}>{t("Annulla")}</button>
                             <button className="modal-btn modal-btn-primary" onClick={eseguiExport} disabled={exportBusy}>
                                 {exportBusy ? 'Esportazione...' : 'Scarica CSV'}
                             </button>

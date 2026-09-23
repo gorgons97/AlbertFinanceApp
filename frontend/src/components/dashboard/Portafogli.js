@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../../api';
 import ConfirmModal from './ConfirmModal';
 import './Portafogli.css';
@@ -23,6 +24,7 @@ const TIPI_LABELS = {
 const TIPI_CREAZIONE = ['contanti', 'conti', 'carta di credito', 'risparmi'];
 
 const Portafogli = () => {
+    const { t } = useTranslation();
     const [portafogli, setPortafogli] = useState([]);
     const [nuovo, setNuovo] = useState('');
     const [importo, setImporto] = useState('');
@@ -51,7 +53,7 @@ const Portafogli = () => {
             const res = await api.get('/api/portafogli/');
             setPortafogli(res.data);
         } catch (err) {
-            setError('Errore nel caricamento dei portafogli');
+            setError(t('Errore nel caricamento dei portafogli'));
         } finally {
             setLoading(false);
         }
@@ -71,10 +73,10 @@ const Portafogli = () => {
             setNuovo('');
             setImporto('');
             setTipo('conti');
-            setSuccess(`"${res.data.nome}" aggiunto!`);
+            setSuccess(`"${res.data.nome}" ${t('aggiunto!')}`);
             setTimeout(() => setSuccess(''), 2500);
         } catch (err) {
-            setError(err.response?.data?.detail || "Errore durante l'aggiunta");
+            setError(err.response?.data?.detail || t("Errore durante l'aggiunta"));
         }
     };
 
@@ -98,10 +100,10 @@ const Portafogli = () => {
             });
             setPortafogli(portafogli.map(p => p.id_portafoglio === pfId ? res.data : p));
             setEditingId(null);
-            setSuccess(`"${res.data.nome}" aggiornato!`);
+            setSuccess(`"${res.data.nome}" ${t('aggiornato!')}`);
             setTimeout(() => setSuccess(''), 2500);
         } catch (err) {
-            setError(err.response?.data?.detail || 'Errore durante la modifica');
+            setError(err.response?.data?.detail || t('Errore durante la modifica'));
         }
     };
 
@@ -113,10 +115,10 @@ const Portafogli = () => {
             setError('');
             await api.delete(`/api/portafogli/${deleteTarget.id_portafoglio}`);
             setPortafogli(portafogli.filter(p => p.id_portafoglio !== deleteTarget.id_portafoglio));
-            setSuccess(`"${deleteTarget.nome}" rimosso`);
+            setSuccess(`"${deleteTarget.nome}" ${t('rimosso')}`);
             setTimeout(() => setSuccess(''), 2500);
         } catch (err) {
-            setError(err.response?.data?.detail || 'Errore durante la rimozione');
+            setError(err.response?.data?.detail || t('Errore durante la rimozione'));
         } finally {
             setDeleteTarget(null);
         }
@@ -139,37 +141,37 @@ const Portafogli = () => {
                 email: inviteEmail.trim(),
             });
             setInviteMsg(res.data.utente_esistente
-                ? `Invito inviato a ${inviteEmail.trim()}`
-                : `Invito creato per ${inviteEmail.trim()} (si attiverà alla registrazione)`);
+                ? `${t('Invito inviato a')} ${inviteEmail.trim()}`
+                : `${t('Invito creato per')} ${inviteEmail.trim()} ${t('(si attiverà alla registrazione)')}`);
             setInviteEmail('');
             setTimeout(() => { setInviteTarget(null); setInviteMsg(''); }, 2500);
         } catch (err) {
-            setInviteMsg(err.response?.data?.detail || 'Errore durante l\'invito');
+            setInviteMsg(err.response?.data?.detail || t("Errore durante l'invito"));
         }
     };
 
     if (loading) {
-        return <div className="portafogli-page"><p className="portafogli-loading">Caricamento portafogli...</p></div>;
+        return <div className="portafogli-page"><p className="portafogli-loading">{t('Caricamento portafogli...')}</p></div>;
     }
 
     return (
         <div className="portafogli-page">
-            <h2>I tuoi Portafogli</h2>
+            <h2>{t("I tuoi Portafogli")}</h2>
 
             <form onSubmit={aggiungiPortafoglio} className="portafogli-form">
                 <input type="text" className="portafogli-input portafogli-input-nome"
-                    placeholder="Nuovo portafoglio..." value={nuovo}
+                    placeholder={t("Nuovo portafoglio...")} value={nuovo}
                     onChange={e => setNuovo(e.target.value)} maxLength={50} required />
                 <input type="number" className="portafogli-input portafogli-input-importo"
                     placeholder="0.00" value={importo} onChange={e => setImporto(e.target.value)}
                     step="0.01" min="0" max="99999999.99" />
                 <select className="portafogli-input portafogli-input-tipo"
                     value={tipo} onChange={e => setTipo(e.target.value)}>
-                    {TIPI_CREAZIONE.map(t => (
-                        <option key={t} value={t}>{TIPI_ICONE[t]} {TIPI_LABELS[t]}</option>
+                    {TIPI_CREAZIONE.map(tipo => (
+                        <option key={tipo} value={tipo}>{TIPI_ICONE[tipo]} {t(TIPI_LABELS[tipo])}</option>
                     ))}
                 </select>
-                <button type="submit" className="portafogli-add-btn" title="Aggiungi portafoglio">
+                <button type="submit" className="portafogli-add-btn" title={t("Aggiungi portafoglio")}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <path d="M12 5v14M5 12h14"/>
                     </svg>
@@ -182,8 +184,8 @@ const Portafogli = () => {
             {portafogli.length === 0 ? (
                 <div className="portafogli-empty">
                     <span className="empty-icon">👛</span>
-                    <p>Nessun portafoglio creato.</p>
-                    <p className="empty-hint">Usa il campo sopra per aggiungerne uno.</p>
+                    <p>{t("Nessun portafoglio creato.")}</p>
+                    <p className="empty-hint">{t("Usa il campo sopra per aggiungerne uno.")}</p>
                 </div>
             ) : (
                 <ul className="portafogli-list">
@@ -204,19 +206,19 @@ const Portafogli = () => {
                                             <select className="portafogli-edit-input portafogli-edit-tipo"
                                                 value={editTipo} onChange={e => setEditTipo(e.target.value)}>
                                                 {Object.entries(TIPI_LABELS).map(([val, label]) => (
-                                                    <option key={val} value={val}>{TIPI_ICONE[val]} {label}</option>
+                                                    <option key={val} value={val}>{TIPI_ICONE[val]} {t(label)}</option>
                                                 ))}
                                             </select>
                                         </>
                                     )}
                                     <div className="portafogli-edit-actions">
                                         <button className="portafogli-edit-save"
-                                            onClick={() => salvaModifica(pf.id_portafoglio)} title="Salva">
+                                            onClick={() => salvaModifica(pf.id_portafoglio)} title={t("Salva")}>
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                                 <path d="M5 13l4 4L19 7"/>
                                             </svg>
                                         </button>
-                                        <button className="portafogli-edit-cancel" onClick={annullaModifica} title="Annulla">
+                                        <button className="portafogli-edit-cancel" onClick={annullaModifica} title={t("Annulla")}>
                                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                                 <path d="M18 6L6 18M6 6l12 12"/>
                                             </svg>
@@ -227,13 +229,13 @@ const Portafogli = () => {
                                 <>
                                     <span className="pf-icon">{TIPI_ICONE[pf.tipo] || '👛'}</span>
                                     <span className="pf-name">{pf.nome}</span>
-                                    {pf.ruolo === 'cointestatario' && <span className="pf-ruolo-badge">condiviso</span>}
-                                    <span className="pf-tipo-label">{TIPI_LABELS[pf.tipo] || pf.tipo}</span>
+                                    {pf.ruolo === 'cointestatario' && <span className="pf-ruolo-badge">{t("condiviso")}</span>}
+                                    <span className="pf-tipo-label">{t(TIPI_LABELS[pf.tipo] || pf.tipo)}</span>
                                     <span className="pf-valore">{parseFloat(pf.valore).toFixed(2)} €</span>
                                     {!isGenerale(pf) && (
                                         <>
                                             <button className="pf-invite-btn"
-                                                onClick={() => apriInvito(pf)} title={`Invita a ${pf.nome}`}>
+                                                onClick={() => apriInvito(pf)} title={`${t("Invita a")} ${pf.nome}`}>
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
                                                     <circle cx="9" cy="7" r="4"/>
@@ -241,14 +243,14 @@ const Portafogli = () => {
                                                 </svg>
                                             </button>
                                             <button className="pf-edit-btn"
-                                                onClick={() => iniziaModifica(pf)} title={`Modifica ${pf.nome}`}>
+                                                onClick={() => iniziaModifica(pf)} title={`${t("Modifica")} ${pf.nome}`}>
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                                                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                                                 </svg>
                                             </button>
                                             <button className="pf-delete-btn"
-                                                onClick={() => confermaElimina(pf)} title={`Elimina ${pf.nome}`}>
+                                                onClick={() => confermaElimina(pf)} title={`${t("Elimina")} ${pf.nome}`}>
                                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                     <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                                                 </svg>
@@ -262,21 +264,21 @@ const Portafogli = () => {
                 </ul>
             )}
 
-            <ConfirmModal isOpen={!!deleteTarget} title="Elimina portafoglio"
-                message={`Sei sicuro di voler eliminare "${deleteTarget?.nome}"? Questa azione non può essere annullata.`}
+            <ConfirmModal isOpen={!!deleteTarget} title={t("Elimina portafoglio")}
+                message={`${t('Sei sicuro di voler eliminare')} "${deleteTarget?.nome}"? ${t('Questa azione non può essere annullata.')}`}
                 onConfirm={eseguiElimina} onCancel={() => setDeleteTarget(null)} />
 
             {inviteTarget && (
                 <div className="modal-overlay" onClick={() => setInviteTarget(null)}>
                     <div className="quickadd-modal" onClick={e => e.stopPropagation()}>
-                        <h3>Invita a "{inviteTarget.nome}"</h3>
+                        <h3>{t("Invita a")} "{inviteTarget.nome}"</h3>
                         <form onSubmit={inviaInvito} className="quickadd-form">
-                            <input type="email" placeholder="Email della persona da invitare"
+                            <input type="email" placeholder={t("Email della persona da invitare")}
                                 value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} required />
                             <div className="quickadd-actions">
                                 <button type="button" className="modal-btn modal-btn-cancel"
-                                    onClick={() => setInviteTarget(null)}>Annulla</button>
-                                <button type="submit" className="modal-btn modal-btn-primary">Invia invito</button>
+                                    onClick={() => setInviteTarget(null)}>{t("Annulla")}</button>
+                                <button type="submit" className="modal-btn modal-btn-primary">{t("Invia invito")}</button>
                             </div>
                             {inviteMsg && <p className="quickadd-msg">{inviteMsg}</p>}
                         </form>

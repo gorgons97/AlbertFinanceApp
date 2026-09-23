@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../../api';
 import './Report.css';
@@ -10,6 +11,7 @@ const TIPI_ICONE = { spesa: '💸', guadagno: '💰', trasferimento: '🔄' };
 
 /* ── Grafico a ciambella (donut) in SVG puro ── */
 const Donut = ({ data, size = 180, thickness = 26 }) => {
+    const { t } = useTranslation();
     const tot = data.reduce((a, d) => a + d.importo, 0);
     if (tot <= 0) {
         return (
@@ -18,7 +20,7 @@ const Donut = ({ data, size = 180, thickness = 26 }) => {
                     <circle cx={size / 2} cy={size / 2} r={(size - thickness) / 2}
                         fill="none" stroke="#e5e7eb" strokeWidth={thickness} />
                 </svg>
-                <span className="report-empty-label">Nessun dato</span>
+                <span className="report-empty-label">{t("Nessun dato")}</span>
             </div>
         );
     }
@@ -53,6 +55,7 @@ const Donut = ({ data, size = 180, thickness = 26 }) => {
 
 /* ── Legenda: colore, nome, percentuale di peso e valore effettivo ── */
 const Legend = ({ data }) => {
+    const { t } = useTranslation();
     const tot = data.reduce((a, d) => a + d.importo, 0);
     return (
         <ul className="report-legend">
@@ -72,7 +75,8 @@ const Legend = ({ data }) => {
 
 /* ── Grafico a barre per mese (trend) ── */
 const BarChartMesi = ({ data }) => {
-    if (!data.length) return <p className="report-empty">Nessun dato per il periodo.</p>;
+    const { t } = useTranslation();
+    if (!data.length) return <p className="report-empty">{t("Nessun dato")} per il periodo.</p>;
     const max = Math.max(...data.map(d => Math.max(d.spese, d.entrate)), 1);
     return (
         <div className="report-bars">
@@ -97,7 +101,8 @@ const BarChartMesi = ({ data }) => {
 
 /* ── Barre orizzontali per portafoglio ── */
 const BarChartPortafogli = ({ data }) => {
-    if (!data.length) return <p className="report-empty">Nessun dato per il periodo.</p>;
+    const { t } = useTranslation();
+    if (!data.length) return <p className="report-empty">{t("Nessun dato")} per il periodo.</p>;
     const max = Math.max(...data.map(d => Math.max(d.spese, d.entrate)), 1);
     return (
         <div className="report-hbars">
@@ -121,6 +126,7 @@ const BarChartPortafogli = ({ data }) => {
 };
 
 const Report = () => {
+    const { t } = useTranslation();
     // Filtro standard: mese corrente
     const meseCorrente = new Date().toISOString().slice(0, 7);
     const [mese, setMese] = useState(meseCorrente);
@@ -179,7 +185,7 @@ const Report = () => {
 
     return (
         <div className="report-page">
-            <h2>Report</h2>
+            <h2>{t("Report")}</h2>
 
             {/* Filtri */}
             <div className="report-filtri">
@@ -223,7 +229,7 @@ const Report = () => {
             </div>
 
             {error && <div className="report-message error">{error}</div>}
-            {loading ? <p className="report-loading">Caricamento...</p> : (
+            {loading ? <p className="report-loading">{t("Caricamento...")}</p> : (
                 <>
                     {/* Cards riassuntive */}
                     <div className="report-cards">
@@ -236,7 +242,7 @@ const Report = () => {
                             <span className="report-card-value income">+{totali.entrate.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
                         </div>
                         <div className="report-card">
-                            <span className="report-card-label">Saldo</span>
+                            <span className="report-card-label">{t("Saldo")}</span>
                             <span className={`report-card-value ${totali.saldo >= 0 ? 'income' : 'expense'}`}>
                                 {totali.saldo.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                             </span>

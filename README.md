@@ -5,21 +5,7 @@ e portafogli cointestati, completamente containerizzata con Docker.
 
 ## Avvio rapido
 
-```bash
-# 1. Installare dipendenze frontend (solo prima volta)
-cd frontend && npm install && cd ..
-
-# 2. Avviare tutti i container
-docker compose up --build
-
-# 3 Avviare la produzione con LetsEncript
-docker compose --env-file .env-vps -f docker-compose.prod.yml up --build
-```
-
-I servizi saranno disponibili su:
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:8000
-- **Database**: localhost:5432
+Per le istruzioni su come avviare l'applicazione in **modalità Light** (semplice) o **Full** (produzione), consulta la **[Guida all'Installazione](./INSTALLAZIONE.md)**.
 
 ## Struttura
 

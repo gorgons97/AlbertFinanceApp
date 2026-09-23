@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import api from '../../api';
 import supabase from '../../supabase';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import './Registrazione.css'; // Usa lo stesso CSS modificando i nomi delle classi
 
 
 const Registrazione = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     // Stati per gestire i form data - AGGIORNATI con nuovi campi
     const [formData, setFormData] = useState({
         nome: '',

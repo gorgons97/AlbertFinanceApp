@@ -1,7 +1,9 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import './ConfirmModal.css';
 
 const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel }) => {
+    const { t } = useTranslation();
     if (!isOpen) return null;
 
     return (
@@ -10,8 +12,8 @@ const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel }) => {
                 <h3>{title}</h3>
                 <p>{message}</p>
                 <div className="modal-actions">
-                    <button className="modal-btn modal-btn-cancel" onClick={onCancel}>Annulla</button>
-                    <button className="modal-btn modal-btn-danger" onClick={onConfirm}>Elimina</button>
+                    <button className="modal-btn modal-btn-cancel" onClick={onCancel}>{t('Annulla')}</button>
+                    <button className="modal-btn modal-btn-danger" onClick={onConfirm}>{t('Elimina')}</button>
                 </div>
             </div>
         </div>

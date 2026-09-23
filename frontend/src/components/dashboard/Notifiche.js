@@ -1,8 +1,10 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 import api from '../../api';
 import './Notifiche.css';
 
 const Notifiche = ({ onCambio }) => {
+    const { t } = useTranslation();
     const [notifiche, setNotifiche] = useState([]);
     const [loading, setLoading] = useState(true);
     const [msg, setMsg] = useState('');
@@ -58,11 +60,11 @@ const Notifiche = ({ onCambio }) => {
         }
     };
 
-    if (loading) return <div className="notifiche-page"><p className="notifiche-loading">Caricamento...</p></div>;
+    if (loading) return <div className="notifiche-page"><p className="notifiche-loading">{t("Caricamento...")}</p></div>;
 
     return (
         <div className="notifiche-page">
-            <h2>Notifiche</h2>
+            <h2>{t("Notifiche")}</h2>
             {msg && <div className="notifiche-message">{msg}</div>}
 
             {notifiche.length === 0 ? (
