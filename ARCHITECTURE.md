@@ -1,25 +1,27 @@
-# Albert — Architettura del Progetto
+*🇮🇹 [Leggi la documentazione dell'architettura in Italiano](ARCHITECTURE_it.md)*
 
-## Panoramica
+# Albert — Project Architecture
 
-Albert e' un gestore spese familiare multi-utente containerizzato con Docker.
-Permette a piu' persone di tracciare le proprie spese su portafogli personali.
+## Overview
 
-## Stack tecnologico
+Albert is a multi-user family expense manager containerized with Docker.
+It allows multiple people to track their expenses on personal wallets.
 
-| Livello     | Tecnologia                  |
-|------------|-----------------------------|
-| Frontend   | React 19, React Router 7, Axios |
-| Backend    | FastAPI (Python 3.9), SQLAlchemy, Pydantic |
-| Database   | PostgreSQL 15               |
-| Auth       | bcrypt (password), JWT      |
-| Container  | Docker + docker-compose     |
+## Technology Stack
+
+| Layer       | Technology                  |
+|-------------|-----------------------------|
+| Frontend    | React 19, React Router 7, Axios |
+| Backend     | FastAPI (Python 3.9), SQLAlchemy, Pydantic |
+| Database    | PostgreSQL 15               |
+| Auth        | bcrypt (password), JWT      |
+| Container   | Docker + docker-compose     |
 
 ---
 
-## Schema del database
+## Database Schema
 
-```
+```text
 utenti
   id_utente        SERIAL PK
   nome             VARCHAR(100)
@@ -33,9 +35,9 @@ portafogli
   nome             VARCHAR(100)
   valore           NUMERIC(10,2)
   tipo             SMALLINT NOT NULL DEFAULT 3
-                   (1=generale, 2=contanti, 3=conti, 4=carta di credito, 5=risparmi)
+                   (1=general, 2=cash, 3=accounts, 4=credit card, 5=savings)
 
-utenti_portafogli      (tabella di join N:N)
+utenti_portafogli      (N:N join table)
   id_utente        INT FK -> utenti
   id_portafoglio   INT FK -> portafogli
   PK (id_utente, id_portafoglio)
@@ -44,9 +46,9 @@ categorie
   id_categoria     SERIAL PK
   nome             VARCHAR(100) UNIQUE
   tipo             SMALLINT NOT NULL DEFAULT 1
-                   (1=spesa, 2=guadagno, 3=trasferimento)
+                   (1=expense, 2=income, 3=transfer)
 
-utenti_categorie       (tabella di join N:N)
+utenti_categorie       (N:N join table)
   id_utente        INT FK -> utenti
   id_categoria     INT FK -> categorie
   PK (id_utente, id_categoria)
@@ -57,97 +59,97 @@ transazioni
   id_portafoglio   INT FK -> portafogli
   id_categoria     INT FK -> categorie
   tipo             SMALLINT NOT NULL DEFAULT 1
-                   (1=spesa, 2=guadagno, 3=trasferimento)
+                   (1=expense, 2=income, 3=transfer)
   importo          NUMERIC(10,2)
   descrizione      TEXT
   data_transazione DATE
   ora_transazione  TIME
   nascosto         BOOLEAN DEFAULT FALSE
   link_allegato    TEXT
-  id_transazione_collegata INT FK -> transazioni (per trasferimenti)
+  id_transazione_collegata INT FK -> transazioni (for transfers)
 ```
 
 ---
 
-## API endpoints
+## API Endpoints
 
-| Method | Path                        | Descrizione                         | Auth |
-|--------|-----------------------------|-------------------------------------|------|
-| GET    | /                           | Health check                        | No   |
-| POST   | /api/auth/registrazione     | Crea utente + portafoglio generale  | No   |
-| POST   | /api/auth/login             | Login (JWT)                         | No   |
-| POST   | /api/auth/reset-password    | Reset password                      | No   |
-| GET    | /api/portafogli/            | Lista portafogli (no generale)      | JWT  |
-| GET    | /api/portafogli/saldo       | Saldo totale                        | JWT  |
-| POST   | /api/portafogli/            | Crea portafoglio                    | JWT  |
-| PUT    | /api/portafogli/{id}        | Modifica portafoglio                | JWT  |
-| DELETE | /api/portafogli/{id}        | Rimuovi portafoglio                 | JWT  |
-| GET    | /api/categorie/             | Lista categorie                     | JWT  |
-| GET    | /api/categorie/per-tipo/{t} | Filtra per tipo (spesa/guadagno)    | JWT  |
-| POST   | /api/categorie/             | Crea categoria                      | JWT  |
-| PUT    | /api/categorie/{id}         | Modifica categoria                  | JWT  |
-| DELETE | /api/categorie/{id}         | Rimuovi categoria                   | JWT  |
-| GET    | /api/transazioni/           | Lista transazioni (?mese=YYYY-MM)   | JWT  |
-| POST   | /api/transazioni/           | Crea transazione                    | JWT  |
-| PUT    | /api/transazioni/{id}       | Modifica transazione                | JWT  |
-| DELETE | /api/transazioni/{id}       | Elimina transazione                 | JWT  |
-| POST   | /api/transazioni/trasferimento | Trasferimento tra portafogli     | JWT  |
-| POST   | /api/backup/import          | Importa XLSX/CSV                    | JWT  |
-| GET    | /api/backup/export          | Scarica backup CSV                  | JWT  |
+| Method | Path                           | Description                           | Auth |
+|--------|--------------------------------|---------------------------------------|------|
+| GET    | /                              | Health check                          | No   |
+| POST   | /api/auth/registrazione        | Create user + general wallet          | No   |
+| POST   | /api/auth/login                | Login (JWT)                           | No   |
+| POST   | /api/auth/reset-password       | Reset password                        | No   |
+| GET    | /api/portafogli/               | List wallets (no general)             | JWT  |
+| GET    | /api/portafogli/saldo          | Total balance                         | JWT  |
+| POST   | /api/portafogli/               | Create wallet                         | JWT  |
+| PUT    | /api/portafogli/{id}           | Update wallet                         | JWT  |
+| DELETE | /api/portafogli/{id}           | Remove wallet                         | JWT  |
+| GET    | /api/categorie/                | List categories                       | JWT  |
+| GET    | /api/categorie/per-tipo/{t}    | Filter by type (expense/income)       | JWT  |
+| POST   | /api/categorie/                | Create category                       | JWT  |
+| PUT    | /api/categorie/{id}            | Update category                       | JWT  |
+| DELETE | /api/categorie/{id}            | Remove category                       | JWT  |
+| GET    | /api/transazioni/              | List transactions (?mese=YYYY-MM)     | JWT  |
+| POST   | /api/transazioni/              | Create transaction                    | JWT  |
+| PUT    | /api/transazioni/{id}          | Update transaction                    | JWT  |
+| DELETE | /api/transazioni/{id}          | Delete transaction                    | JWT  |
+| POST   | /api/transazioni/trasferimento | Transfer between wallets              | JWT  |
+| POST   | /api/backup/import             | Import XLSX/CSV                       | JWT  |
+| GET    | /api/backup/export             | Download CSV backup                   | JWT  |
 
 ---
 
-## Feature principali
+## Main Features
 
-### Portafogli
-- 4 tipi selezionabili: Contanti, Conti, Carta di credito, Risparmi
-- "Generale" gestito automaticamente (creato alla registrazione, nascosto dalla lista)
-- Saldo visibile nella card Saldo della Dashboard
-- Ogni portafoglio mostra il saldo calcolato da transazioni
-- Modifica e eliminazione con conferma
+### Wallets
+- 4 selectable types: Cash, Accounts, Credit card, Savings
+- "General" is managed automatically (created upon registration, hidden from the list)
+- Balance visible in the Balance card on the Dashboard
+- Each wallet displays the balance calculated from transactions
+- Update and delete with confirmation
 
-### Categorie
-- 3 tipi: Spesa, Guadagno, Trasferimento
-- Filtro automatico nel form transazioni in base al tipo selezionato
-- Condivise tra utenti (se stesso nome+tipo, vengono riusate)
+### Categories
+- 3 types: Expense, Income, Transfer
+- Automatic filter in the transactions form based on the selected type
+- Shared among users (if same name+type, they are reused)
 
-### Transazioni
-- Spesa/Guadagno con portafoglio, categoria, importo, descrizione
-- Trasferimento: crea due transazioni collegate (uscita + entrata)
-- Modifica inline con update automatico dei saldi
-- Eliminazione con aggiornamento saldi
-- Categorie di trasferimento create automaticamente
+### Transactions
+- Expense/Income with wallet, category, amount, description
+- Transfer: creates two linked transactions (outgoing + incoming)
+- Inline editing with automatic balance updates
+- Deletion with balance updates
+- Transfer categories created automatically
 
 ### Dashboard
-- Card reali: Spese mese, Entrate mese, Saldo totale
-- Lista transazioni del mese corrente
-- FAB (+) apre modale di aggiunta rapida
+- Real cards: Monthly expenses, Monthly income, Total balance
+- List of current month's transactions
+- FAB (+) opens quick add modal
 
 ### Backup
-- Import da XLSX (Money Manager) o CSV
-- Crea automaticamente portafogli, categorie e transazioni mancanti
-- Export CSV scaricabile con tutte le transazioni
+- Import from XLSX (Money Manager) or CSV
+- Automatically creates missing wallets, categories, and transactions
+- Downloadable CSV export with all transactions
 
 ---
 
-## Avvio
+## Getting Started
 
 ```bash
-cd frontend && npm install          # solo prima volta
+cd frontend && npm install          # only first time
 docker compose up --build
 ```
 
-Accesso: http://localhost:3001
+Access: http://localhost:3001
 Backend: http://localhost:8001
 Database: localhost:5433
 
-## Porte
+## Ports
 
-| Servizio  | Host  | Container |
+| Service   | Host  | Container |
 |-----------|-------|-----------|
-| Frontend  | 3001  | 3000     |
-| Backend   | 8001  | 8000     |
-| Database  | 5433  | 5432     |
+| Frontend  | 3001  | 3000      |
+| Backend   | 8001  | 8000      |
+| Database  | 5433  | 5432      |
 
 ## Database
 
@@ -157,35 +159,32 @@ docker exec -it albert_db psql -U albert -d albert_app -p 5432
 
 ---
 
-## Deploy in produzione (VPS + HTTPS)
+## Production Deployment (VPS + HTTPS)
 
-L'app e' pensata per girare dietro un reverse proxy (nginx) che termina TLS.
-I container restano su HTTP interno; e' nginx a cifrare il traffico.
+The app is designed to run behind a reverse proxy (nginx) that terminates TLS.
+The containers remain on internal HTTP; nginx encrypts the traffic.
 
-### Variabili d'ambiente (file `.env` nella root del progetto)
+### Environment Variables (`.env` file in project root)
 
-| Variabile            | Descrizione                                                    | Default (dev)                        |
+| Variable             | Description                                                    | Default (dev)                        |
 |----------------------|----------------------------------------------------------------|--------------------------------------|
-| `SECRET_KEY`         | Chiave firma JWT — **obbligatoria in produzione**, lunga e casuale | chiave-di-sviluppo-NON-usare-in-produzione |
-| `CORS_ORIGINS`       | Origini consentite, virgola-separate (es. `https://albert.tuodominio.it`) | `*` (tutte, solo dev) |
-| `REACT_APP_API_BASE` | Override URL API del frontend (in produzione: `/api`)          | auto: `/api` se HTTPS, altrimenti `http://<host>:8001` |
+| `SECRET_KEY`         | JWT signature key — **mandatory in production**, long and random | chiave-di-sviluppo-NON-usare-in-produzione |
+| `CORS_ORIGINS`       | Allowed origins, comma-separated (e.g. `https://albert.yourdomain.com`) | `*` (all, dev only) |
+| `REACT_APP_API_BASE` | Frontend API URL override (in production: `/api`)          | auto: `/api` if HTTPS, otherwise `http://<host>:8001` |
 
-Esempio `.env` per la VPS:
+Example `.env` for the VPS:
 
 ```
 SECRET_KEY=$(openssl rand -hex 32)
-CORS_ORIGINS=https://albert.tuodominio.it
+CORS_ORIGINS=https://albert.yourdomain.com
 REACT_APP_API_BASE=/api
 ```
 
-### Reverse proxy
+### Reverse Proxy
 
-Config nginx completa in `deploy/nginx-vps.conf` (redirect HTTP->HTTPS, proxy
-frontend su 127.0.0.1:3001, proxy `/api` sul backend 127.0.0.1:8001, headers di
-sicurezza). Richiede un dominio (es. DuckDNS gratuito) + certificato Let's Encrypt
-(`certbot --nginx -d TUODOMINIO.it`).
+Full nginx config in `deploy/nginx-vps.conf` (HTTP->HTTPS redirect, frontend proxy on 127.0.0.1:3001, `/api` proxy on backend 127.0.0.1:8001, security headers). Requires a domain (e.g. free DuckDNS) + Let's Encrypt certificate (`certbot --nginx -d YOURDOMAIN.com`).
 
-Dopo l'attivazione di nginx, chiudere le porte dirette dei container:
+After enabling nginx, close the direct container ports:
 
 ```bash
 ufw allow 22/tcp && ufw allow 80/tcp && ufw allow 443/tcp
@@ -193,29 +192,29 @@ ufw deny 3001/tcp && ufw deny 8001/tcp
 ufw enable
 ```
 
-### Produzione (VPS) — file dedicati
+### Production (VPS) — Dedicated Files
 
-| File                     | Ruolo                                                        |
+| File                     | Role                                                         |
 |--------------------------|--------------------------------------------------------------|
-| `docker-compose.prod.yml`| Compose di produzione: nessuna porta pubblica per db/backend/frontend, servizio nginx incluso (80/443) |
-| `nginx/nginx.prod.conf`  | Config nginx con dominio + certificati Let's Encrypt (sostituire `TUODOMINIO.it`) |
-| `.env-vps.example`       | Template delle variabili per la VPS → copiare in `.env-vps` (mai committato) |
+| `docker-compose.prod.yml`| Production compose: no public port for db/backend/frontend, nginx service included (80/443) |
+| `nginx/nginx.prod.conf`  | nginx config with domain + Let's Encrypt certificates (replace `YOURDOMAIN.com`) |
+| `.env-vps.example`       | Variables template for the VPS → copy to `.env-vps` (never committed) |
 
-Avvio in produzione:
+Starting in production:
 
 ```bash
-cp .env-vps.example .env-vps          # poi modifica i valori
-# ottenere il certificato (prima di avviare nginx):
+cp .env-vps.example .env-vps          # then modify the values
+# get the certificate (before starting nginx):
 docker run --rm -v /etc/letsencrypt:/etc/letsencrypt -p 80:80 \
-  certbot/certbot certonly --standalone -d TUODOMINIO.it \
-  --non-interactive --agree-tos -m TUOEMAIL@example.com
+  certbot/certbot certonly --standalone -d YOURDOMAIN.com \
+  --non-interactive --agree-tos -m YOUREMAIL@example.com
 docker compose --env-file .env-vps -f docker-compose.prod.yml up -d --build
 ```
 
-### Nota sicurezza
+### Security Note
 
-Il frontend gira con il dev server webpack: accettabile per test, ma in produzione
-a lungo termine e' consigliato servire la build statica (`npm run build`) da nginx.
-```
+The frontend runs with the webpack dev server: acceptable for testing, but in long-term production, it is recommended to serve the static build (`npm run build`) via nginx.
 
+```bash
 docker compose --env-file .env-vps -f docker-compose.prod.yml up -d --build
+```

@@ -1,3 +1,5 @@
+*🇬🇧 [Read the installation guide in English](INSTALLATION.md)*
+
 # Guida all'Installazione
 
 Albert è stato progettato per essere flessibile. Puoi avviarlo in due modalità:
