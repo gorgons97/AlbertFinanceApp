@@ -44,11 +44,11 @@ const FiltriTransazioni = ({
                         <span className="filtri-label">Tipo</span>
                         <div className="filtri-chips">
                             {TIPI.map(tipoItem => (
-                                <label key={t.valore} className="chip">
+                                <label key={tipoItem.valore} className="chip">
                                     <input type="checkbox"
-                                        checked={tipi.includes(t.valore)}
-                                        onChange={() => toggle(tipi, setTipi, t.valore)} />
-                                    {t.etichetta}
+                                        checked={tipi.includes(tipoItem.valore)}
+                                        onChange={() => toggle(tipi, setTipi, tipoItem.valore)} />
+                                    {tipoItem.etichetta}
                                 </label>
                             ))}
                         </div>
