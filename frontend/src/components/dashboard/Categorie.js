@@ -23,7 +23,8 @@ const Categorie = () => {
 
     const [deleteTarget, setDeleteTarget] = useState(null);
 
-    useEffect(() => { caricaCategorie(); }, []);
+    useEffect(() => { caricaCategorie();     // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const caricaCategorie = async () => {
         try {

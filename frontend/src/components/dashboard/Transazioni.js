@@ -46,7 +46,8 @@ const Transazioni = () => {
     const [filterDataFine, setFilterDataFine] = useState('');
     const [filterMese, setMese] = useState(meseCorrente);
 
-    useEffect(() => { caricaDati(); }, []);
+    useEffect(() => { caricaDati();     // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const caricaDati = async () => {
         try {

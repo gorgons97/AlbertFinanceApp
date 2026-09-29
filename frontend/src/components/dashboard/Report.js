@@ -55,7 +55,6 @@ const Donut = ({ data, size = 180, thickness = 26 }) => {
 
 /* ── Legenda: colore, nome, percentuale di peso e valore effettivo ── */
 const Legend = ({ data }) => {
-    const { t } = useTranslation();
     const tot = data.reduce((a, d) => a + d.importo, 0);
     return (
         <ul className="report-legend">

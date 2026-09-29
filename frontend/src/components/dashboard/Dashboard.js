@@ -39,7 +39,7 @@ const Dashboard = () => {
         const checkAuth = async () => {
             try {
                 // 1. Controlla prima se c'è un token legacy nel localStorage
-                const legacyToken = localStorage.getItem('access_token');
+                 // const legacyToken = localStorage.getItem('access_token');
                 
                 // 2. Attendi un momento se c'è un parametro OAuth nell'URL (per dare tempo a Supabase di elaborarlo)
                 const isOAuthCallback = window.location.hash.includes('access_token') || window.location.search.includes('code=');

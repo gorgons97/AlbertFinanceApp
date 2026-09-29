@@ -22,7 +22,8 @@ const Notifiche = ({ onCambio }) => {
         }
     };
 
-    useEffect(() => { carica(); }, []);
+    useEffect(() => { carica();     // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const accetta = async (id) => {
         try {

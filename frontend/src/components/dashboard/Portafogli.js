@@ -45,7 +45,8 @@ const Portafogli = () => {
     const [inviteEmail, setInviteEmail] = useState('');
     const [inviteMsg, setInviteMsg] = useState('');
 
-    useEffect(() => { caricaPortafogli(); }, []);
+    useEffect(() => { caricaPortafogli();     // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const caricaPortafogli = async () => {
         try {
