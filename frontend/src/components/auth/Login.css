@@ -64,6 +64,7 @@
 
 /* Card del login */
 .login-card {
+  position: relative;
   background: var(--white);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-xl);
@@ -472,6 +473,7 @@
   }
 
   .login-card {
+  position: relative;
     padding: 1.5rem;
   }
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import './Sidebar.css';
 
 const menuItems = [
@@ -15,6 +16,8 @@ const bottomItems = [
 ];
 
 const Sidebar = ({ collapsed, onToggle, onMenuClick, onLogout, mobileOpen, onMobileClose, activePage }) => {
+    const { t } = useTranslation();
+
     const handleClick = (id, label) => {
         if (id === 'logout') {
             onLogout && onLogout();
@@ -57,10 +60,10 @@ const Sidebar = ({ collapsed, onToggle, onMenuClick, onLogout, mobileOpen, onMob
                                 <button
                                     className={`sidebar-item ${item.id === activePage ? 'active' : ''}`}
                                     onClick={() => handleClick(item.id, item.label)}
-                                    title={collapsed && !mobileOpen ? item.label : ''}
+                                    title={collapsed && !mobileOpen ? t(item.label) : ''}
                                 >
                                     <span className="sidebar-icon">{item.icon}</span>
-                                    {!(collapsed && !mobileOpen) && <span className="sidebar-label">{item.label}</span>}
+                                    {!(collapsed && !mobileOpen) && <span className="sidebar-label">{t(item.label)}</span>}
                                 </button>
                             </li>
                         ))}
@@ -72,10 +75,10 @@ const Sidebar = ({ collapsed, onToggle, onMenuClick, onLogout, mobileOpen, onMob
                                 <button
                                     className={`sidebar-item ${item.id === 'logout' ? 'logout-item' : ''}`}
                                     onClick={() => handleClick(item.id, item.label)}
-                                    title={collapsed && !mobileOpen ? item.label : ''}
+                                    title={collapsed && !mobileOpen ? t(item.label) : ''}
                                 >
                                     <span className="sidebar-icon">{item.icon}</span>
-                                    {!(collapsed && !mobileOpen) && <span className="sidebar-label">{item.label}</span>}
+                                    {!(collapsed && !mobileOpen) && <span className="sidebar-label">{t(item.label)}</span>}
                                 </button>
                             </li>
                         ))}

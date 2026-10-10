@@ -43,8 +43,13 @@ backup/
 # Documentation (except ARCHITECTURE.md and specific guides)
 *.md
 !ARCHITECTURE.md
+!ARCHITECTURE_it.md
 !README.md
-!CONFIGURAZIONE_EMAIL_SMTP.md
+!README_it.md
+!INSTALLATION.md
+!INSTALLATION_it.md
+!CONFIGURAZIONE_EMAIL_SMTP_it.md
+!SMTP_EMAIL_CONFIGURATION.md
 
 # Logs
 *.log

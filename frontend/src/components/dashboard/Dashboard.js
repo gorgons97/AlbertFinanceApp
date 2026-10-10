@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { trd, getLocale } from '../../i18n';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../../api';
 import supabase from '../../supabase';
 import Sidebar from './Sidebar';
@@ -24,6 +26,7 @@ const PAGE_TITLES = {
 const TIPI_ICONE = { spesa: '💸', guadagno: '💰', trasferimento: '🔄' };
 
 const Dashboard = () => {
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [sidebarCollapsed, setSidebarCollapsed] = useState(window.innerWidth < 768);
     const [mobileOpen, setMobileOpen] = useState(false);
@@ -37,7 +40,7 @@ const Dashboard = () => {
         const checkAuth = async () => {
             try {
                 // 1. Controlla prima se c'è un token legacy nel localStorage
-                const legacyToken = localStorage.getItem('access_token');
+                 // const legacyToken = localStorage.getItem('access_token');
                 
                 // 2. Attendi un momento se c'è un parametro OAuth nell'URL (per dare tempo a Supabase di elaborarlo)
                 const isOAuthCallback = window.location.hash.includes('access_token') || window.location.search.includes('code=');
@@ -160,7 +163,7 @@ const Dashboard = () => {
         return (
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#f8fafc' }}>
                 <div style={{ width: '42px', height: '42px', border: '4px solid #e2e8f0', borderTop: '4px solid #3b82f6', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></div>
-                <p style={{ marginTop: '16px', color: '#64748b', fontSize: '1rem', fontWeight: '500' }}>Caricamento sessione...</p>
+                <p style={{ marginTop: '16px', color: '#64748b', fontSize: '1rem', fontWeight: '500' }}>{t('Caricamento sessione...')}</p>
                 <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
             </div>
         );
@@ -182,12 +185,12 @@ const Dashboard = () => {
                                 </svg>
                             </button>
                         )}
-                        <h2>{PAGE_TITLES[activePage] || 'Dashboard'}</h2>
+                        <h2>{t(PAGE_TITLES[activePage] || 'Dashboard')}</h2>
                     </div>
                     <span className="dashboard-month">
-                        {new Date().toLocaleString('it-IT', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase())}
+                        {new Date().toLocaleString(getLocale(), { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase())}
                     </span>
-                    <button className="notif-bell" onClick={() => setActivePage('notifiche')} title="Notifiche">
+                    <button className="notif-bell" onClick={() => setActivePage('notifiche')} title={t('Notifiche')}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
                             <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
@@ -204,6 +207,7 @@ const Dashboard = () => {
 
 /* Quick Add FAB + Modal */
 const QuickAddFAB = () => {
+    const { t } = useTranslation();
     const [open, setOpen] = useState(false);
     const [portafogli, setPortafogli] = useState([]);
     const [categorie, setCategorie] = useState([]);
@@ -234,7 +238,7 @@ const QuickAddFAB = () => {
             const catF = rcat.data.filter(c => c.tipo === 'spesa');
             if (catF.length > 0) setCatId(String(catF[0].id_categoria));
             setOpen(true);
-        } catch { setMsg('Errore caricamento dati'); }
+        } catch { setMsg(t('Errore caricamento dati')); }
     };
 
     const chiudi = () => { setOpen(false); setMsg(''); setImporto(''); setData(''); setDesc(''); };
@@ -246,14 +250,14 @@ const QuickAddFAB = () => {
         // Per i trasferimenti gestiamo due transazioni
         if (tipo === 'trasferimento') {
             if (!pfIdDest) {
-                setMsg('Seleziona il portafoglio di destinazione');
+                setMsg(t('Seleziona il portafoglio di destinazione'));
                 return;
             }
             // Cerchiamo una categoria di spesa e una di guadagno
             const catSpesa = categorie.find(c => c.tipo === 'spesa');
             const catGuadagno = categorie.find(c => c.tipo === 'guadagno');
             if (!catSpesa || !catGuadagno) {
-                setMsg('Categorie per trasferimento non trovate');
+                setMsg(t('Categorie per trasferimento non trovate'));
                 return;
             }
             try {
@@ -263,12 +267,12 @@ const QuickAddFAB = () => {
                     id_portafoglio_destinazione: parseInt(pfIdDest),
                     importo: parseFloat(importo),
                     data_transazione: data,  
-                    descrizione: desc.trim() || 'Trasferimento',
+                    descrizione: desc.trim() || t('Trasferimento'),
                 });
                 chiudi();
                 window.location.reload();
             } catch (err) {
-                setMsg(err.response?.data?.detail || 'Errore durante il trasferimento');
+                setMsg(trd(err.response?.data?.detail) || t('Errore durante il trasferimento'));
             }
             return;
         }
@@ -287,7 +291,7 @@ const QuickAddFAB = () => {
             chiudi();
             window.location.reload();
         } catch (err) {
-            setMsg(err.response?.data?.detail || 'Errore');
+            setMsg(trd(err.response?.data?.detail) || t('Errore'));
         }
     };
 
@@ -295,7 +299,7 @@ const QuickAddFAB = () => {
 
     return (
         <>
-            <button className="fab" onClick={apri} title="Nuova Transazione">
+            <button className="fab" onClick={apri} title={t('Nuova Transazione')}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="M12 5v14M5 12h14"/>
                 </svg>
@@ -303,24 +307,24 @@ const QuickAddFAB = () => {
             {open && (
                 <div className="modal-overlay" onClick={chiudi}>
                     <div className="quickadd-modal" onClick={e => e.stopPropagation()}>
-                        <h3>Nuova Transazione</h3>
+                        <h3>{t('Nuova Transazione')}</h3>
                         <form onSubmit={invia} className="quickadd-form">
                             <div className="quickadd-tabs">
-                                {['spesa','guadagno','trasferimento'].map(t => (
-                                    <button key={t} type="button"
-                                        className={`quickadd-tab ${tipo===t?'active':''}`}
+                                {['spesa','guadagno','trasferimento'].map(tipoItem => (
+                                    <button key={tipoItem} type="button"
+                                        className={`quickadd-tab ${tipo===tipoItem?'active':''}`}
                                         onClick={() => {
-                                            setTipo(t);
+                                            setTipo(tipoItem);
                                             // Quando cambio tipo, resetta i selettori se necessario
-                                            if (t === 'trasferimento') {
+                                            if (tipoItem === 'trasferimento') {
                                                 // Non serve categoria, ma manteniamo i portafogli
                                             } else {
                                                 // Ripristina categoria filtrata
-                                                const cf = categorie.filter(c => c.tipo === t);
+                                                const cf = categorie.filter(c => c.tipo === tipoItem);
                                                 if (cf.length) setCatId(String(cf[0].id_categoria));
                                             }
                                         }}>
-                                        {TIPI_ICONE[t] || '💳'} {t==='spesa'?'Spesa':t==='guadagno'?'Guadagno':'Trasferimento'}
+                                        {TIPI_ICONE[tipoItem] || '💳'} {tipoItem==='spesa' ? t('Spesa') : tipoItem==='guadagno' ? t('Guadagno') : t('Trasferimento')}
                                     </button>
                                 ))}
                             </div>
@@ -348,15 +352,15 @@ const QuickAddFAB = () => {
                                 </select>
                             )}
 
-                            <input type="number" placeholder="Importo" value={importo}
+                            <input type="number" placeholder={t('Importo')} value={importo}
                                 onChange={e => setImporto(e.target.value)} step="0.01" min="0.01" required />
                             <input type="date" className="transazioni-input transazioni-input-data"
                                    value={data} onChange={e => setData(e.target.value)} />
-                            <input type="text" placeholder="Descrizione (opzionale)" value={desc}
+                            <input type="text" placeholder={t('Descrizione (opzionale)')} value={desc}
                                 onChange={e => setDesc(e.target.value)} maxLength={200} />
                             <div className="quickadd-actions">
-                                <button type="button" className="modal-btn modal-btn-cancel" onClick={chiudi}>Annulla</button>
-                                <button type="submit" className="modal-btn modal-btn-primary">Aggiungi</button>
+                                <button type="button" className="modal-btn modal-btn-cancel" onClick={chiudi}>{t('Annulla')}</button>
+                                <button type="submit" className="modal-btn modal-btn-primary">{t('Aggiungi')}</button>
                             </div>
                             {msg && <p className="quickadd-msg">{msg}</p>}
                         </form>
@@ -370,6 +374,7 @@ const QuickAddFAB = () => {
 
 /* Dashboard Home */
 const DashboardHome = () => {
+    const { t } = useTranslation();
     const [saldo, setSaldo] = useState(null);
     const [transazioni, setTransazioni] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -388,34 +393,34 @@ const DashboardHome = () => {
 
     useEffect(() => { carica(); }, [carica]);
 
-    const spese = transazioni.filter(t => t.tipo === 'spesa').reduce((a,t) => a + t.importo, 0);
-    const entrate = transazioni.filter(t => t.tipo === 'guadagno').reduce((a,t) => a + t.importo, 0);
+    const spese = transazioni.filter(tr => tr.tipo === 'spesa').reduce((a, tr) => a + tr.importo, 0);
+    const entrate = transazioni.filter(tr => tr.tipo === 'guadagno').reduce((a, tr) => a + tr.importo, 0);
 
     // Raggruppa per data
-    const grouped = transazioni.reduce((acc, t) => {
-        const date = t.data_transazione; // formato "YYYY-MM-DD"
+    const grouped = transazioni.reduce((acc, tr) => {
+        const date = tr.data_transazione; // formato "YYYY-MM-DD"
         if (!acc[date]) acc[date] = [];
-        acc[date].push(t);
+        acc[date].push(tr);
         return acc;
     }, {});
     // Ordina le date dalla più recente
     const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
 
-    if (loading) return <p className="dash-loading">Caricamento...</p>;
+    if (loading) return <p className="dash-loading">{t('Caricamento...')}</p>;
 
     return (
         <>
             <div className="summary-cards">
                 <div className="summary-card">
-                    <span className="summary-label">Spese del mese</span>
+                    <span className="summary-label">{t('Spese del mese')}</span>
                     <span className="summary-value expense">{spese.toFixed(2)} €</span>
                 </div>
                 <div className="summary-card">
-                    <span className="summary-label">Entrate del mese</span>
+                    <span className="summary-label">{t('Entrate del mese')}</span>
                     <span className="summary-value income">{entrate.toFixed(2)} €</span>
                 </div>
                 <div className="summary-card saldo-card">
-                    <span className="summary-label">Saldo</span>
+                    <span className="summary-label">{t('Saldo')}</span>
                     <span className={`summary-value ${(saldo||0) >= 0 ? 'income' : 'expense'}`}>
                         {saldo !== null ? saldo.toFixed(2) : '--'} €
                     </span>
@@ -424,15 +429,15 @@ const DashboardHome = () => {
             {transazioni.length === 0 ? (
                 <div className="dashboard-placeholder">
                     <div className="placeholder-icon">📊</div>
-                    <p>Nessuna transazione a {new Date().toLocaleString('it-IT', { month: 'long' }).replace(/^\w/, c => c.toUpperCase())}.</p>
-                    <p className="placeholder-hint">Usa il pulsante <strong>+</strong> per aggiungerne una.</p>
+                    <p>{t('Nessuna transazione a')} {new Date().toLocaleString(getLocale(), { month: 'long' }).replace(/^\w/, c => c.toUpperCase())}.</p>
+                    <p className="placeholder-hint">{t('Usa il pulsante')} <strong>+</strong> {t('per aggiungerne una.')}</p>
                 </div>
             ) : (
                 <div className="transazioni-list dash-trans-list">
                     {sortedDates.map(date => {
                         const items = grouped[date];
                         const dateObj = new Date(date + 'T00:00:00');
-                        const formattedDate = dateObj.toLocaleDateString('it-IT', {
+                        const formattedDate = dateObj.toLocaleDateString(getLocale(), {
                             weekday: 'long',
                             day: 'numeric',
                             month: 'long',
@@ -441,15 +446,15 @@ const DashboardHome = () => {
                         return (
                             <div key={date} className="transazioni-group">
                                 <div className="transazioni-group-header">{formattedDate}</div>
-                                {items.map(t => (
-                                    <li key={t.id_transazione} className="transazioni-item">
-                                        <span className="tr-icon">{TIPI_ICONE[t.tipo] || '💳'}</span>
+                                {items.map(tr => (
+                                    <li key={tr.id_transazione} className="transazioni-item">
+                                        <span className="tr-icon">{TIPI_ICONE[tr.tipo] || '💳'}</span>
                                         <div className="tr-info">
-                                            <span className="tr-desc">{t.descrizione || (t.tipo==='spesa'?'Spesa':'Guadagno')}</span>
-                                            <span className="tr-meta">{t.nome_portafoglio} · {t.nome_categoria} · {t.data_transazione} </span>
+                                            <span className="tr-desc">{tr.descrizione || (tr.tipo === 'spesa' ? t('Spesa') : t('Guadagno'))}</span>
+                                            <span className="tr-meta">{tr.nome_portafoglio} · {tr.nome_categoria} · {tr.data_transazione} </span>
                                         </div>
-                                        <span className={`tr-importo ${Number(t.direzione)===2?'tr-importo-positivo':'tr-importo-negativo'}`}>
-                                            {Number(t.direzione)===2?'+':'-'}{parseFloat(t.importo).toFixed(2)} €
+                                        <span className={`tr-importo ${Number(tr.direzione)===2?'tr-importo-positivo':'tr-importo-negativo'}`}>
+                                            {Number(tr.direzione)===2?'+':'-'}{parseFloat(tr.importo).toFixed(2)} €
                                         </span>
                                     </li>
                                 ))}

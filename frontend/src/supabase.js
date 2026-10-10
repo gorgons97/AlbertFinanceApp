@@ -12,13 +12,13 @@ if (window.location.protocol === 'https:') {
 
 // Anon Key (JWT generato con SECRET_KEY con claim role: anon)
 // DEVE essere impostata come variabile d'ambiente REACT_APP_SUPABASE_ANON_KEY
-const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
-if (!supabaseAnonKey) {
+const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY || 'dummy-key-per-evitare-crash-in-versione-light';
+if (!process.env.REACT_APP_SUPABASE_ANON_KEY) {
     // In produzione questo errore indica una configurazione mancante.
     // In sviluppo: imposta REACT_APP_SUPABASE_ANON_KEY nel file .env
-    console.error(
+    console.warn(
         '[Albert] REACT_APP_SUPABASE_ANON_KEY non configurata. ' +
-        'Imposta la variabile nel file .env o nel docker-compose.'
+        'Supabase GoTrue non funzionerà. Verrà utilizzato il fallback interno per il login.'
     );
 }
 

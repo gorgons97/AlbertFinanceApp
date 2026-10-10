@@ -1,4 +1,6 @@
+import { useTranslation } from 'react-i18next';
 import React, { useState, useRef, useEffect } from 'react';
+import { trd } from '../../i18n';
 import api from '../../api';
 import './Impostazioni.css';
 
@@ -16,6 +18,7 @@ const FiltriTransazioni = ({
     portafogliDisponibili, portafogli, setPortafogli,
     dal, setDal, al, setAl,
 }) => {
+    const { t } = useTranslation();
     const toggle = (list, setList, v) =>
         setList(list.includes(v) ? list.filter(x => x !== v) : [...list, v]);
 
@@ -26,36 +29,36 @@ const FiltriTransazioni = ({
                     type="button"
                     className={`filtri-mode-btn ${mode === 'tutto' ? 'active' : ''}`}
                     onClick={() => setMode('tutto')}>
-                    Tutto
+                    {t('Tutto')}
                 </button>
                 <button
                     type="button"
                     className={`filtri-mode-btn ${mode === 'filtra' ? 'active' : ''}`}
                     onClick={() => setMode('filtra')}>
-                    Filtra
+                    {t('Filtra')}
                 </button>
             </div>
 
             {mode === 'filtra' && (
                 <div className="filtri-body">
                     <div className="filtri-gruppo">
-                        <span className="filtri-label">Tipo</span>
+                        <span className="filtri-label">{t("Tipo")}</span>
                         <div className="filtri-chips">
-                            {TIPI.map(t => (
-                                <label key={t.valore} className="chip">
+                            {TIPI.map(tipoItem => (
+                                <label key={tipoItem.valore} className="chip">
                                     <input type="checkbox"
-                                        checked={tipi.includes(t.valore)}
-                                        onChange={() => toggle(tipi, setTipi, t.valore)} />
-                                    {t.etichetta}
+                                        checked={tipi.includes(tipoItem.valore)}
+                                        onChange={() => toggle(tipi, setTipi, tipoItem.valore)} />
+                                    {t(tipoItem.etichetta)}
                                 </label>
                             ))}
                         </div>
                     </div>
 
                     <div className="filtri-gruppo">
-                        <span className="filtri-label">Categorie</span>
+                        <span className="filtri-label">{t("Categorie")}</span>
                         <div className="filtri-chips">
-                            {categorieDisponibili.length === 0 && <span className="filtri-vuoto">Nessuna categoria</span>}
+                            {categorieDisponibili.length === 0 && <span className="filtri-vuoto">{t("Nessuna categoria")}</span>}
                             {categorieDisponibili.map(c => (
                                 <label key={c.id_categoria} className="chip">
                                     <input type="checkbox"
@@ -68,9 +71,9 @@ const FiltriTransazioni = ({
                     </div>
 
                     <div className="filtri-gruppo">
-                        <span className="filtri-label">Portafogli</span>
+                        <span className="filtri-label">{t("Portafogli")}</span>
                         <div className="filtri-chips">
-                            {portafogliDisponibili.length === 0 && <span className="filtri-vuoto">Nessun portafoglio</span>}
+                            {portafogliDisponibili.length === 0 && <span className="filtri-vuoto">{t("Nessun portafoglio")}</span>}
                             {portafogliDisponibili.map(p => (
                                 <label key={p.id_portafoglio} className="chip">
                                     <input type="checkbox"
@@ -83,7 +86,7 @@ const FiltriTransazioni = ({
                     </div>
 
                     <div className="filtri-gruppo filtri-date">
-                        <span className="filtri-label">Periodo</span>
+                        <span className="filtri-label">{t("Periodo")}</span>
                         <div className="filtri-date-row">
                             <label>Da
                                 <input type="date" value={dal} onChange={e => setDal(e.target.value)} />
@@ -100,6 +103,7 @@ const FiltriTransazioni = ({
 };
 
 const Impostazioni = ({ onLogout }) => {
+    const { t, i18n } = useTranslation();
     const fileRef = useRef(null);
     const [importing, setImporting] = useState(false);
     const [result, setResult] = useState(null);
@@ -121,6 +125,7 @@ const Impostazioni = ({ onLogout }) => {
     const [elimPw, setElimPw] = useState('');
     const [elimMsg, setElimMsg] = useState('');
     const [elimBusy, setElimBusy] = useState(false);
+    const [elimOk, setElimOk] = useState(false);
 
     // Eliminazione transazioni smart
     const [elimTransOpen, setElimTransOpen] = useState(false);
@@ -133,6 +138,7 @@ const Impostazioni = ({ onLogout }) => {
     const [elimTransPw, setElimTransPw] = useState('');
     const [elimTransMsg, setElimTransMsg] = useState('');
     const [elimTransBusy, setElimTransBusy] = useState(false);
+    const [elimTransOk, setElimTransOk] = useState(false);
 
     // Export smart
     const [exportOpen, setExportOpen] = useState(false);
@@ -165,7 +171,7 @@ const Impostazioni = ({ onLogout }) => {
             });
             setResult(res.data);
         } catch (err) {
-            setError(err.response?.data?.detail || 'Errore durante l\'import');
+            setError(trd(err.response?.data?.detail) || t("Errore durante l'import"));
         } finally {
             setImporting(false);
         }
@@ -200,7 +206,7 @@ const Impostazioni = ({ onLogout }) => {
             window.URL.revokeObjectURL(url);
             setExportOpen(false);
         } catch (err) {
-            setError('Errore durante l\'export');
+            setError(t("Errore durante l'export"));
         } finally {
             setExportBusy(false);
         }
@@ -210,15 +216,15 @@ const Impostazioni = ({ onLogout }) => {
         e.preventDefault();
         setPwMsg(''); setPwOk(false);
         if (!pwAttuale || !pwNuova || !pwConferma) {
-            setPwMsg('Compila tutti i campi');
+            setPwMsg(t('Compila tutti i campi'));
             return;
         }
         if (pwNuova.length < 8) {
-            setPwMsg('La nuova password deve avere almeno 8 caratteri');
+            setPwMsg(t('La nuova password deve avere almeno 8 caratteri'));
             return;
         }
         if (pwNuova !== pwConferma) {
-            setPwMsg('Le password non coincidono');
+            setPwMsg(t('Le password non coincidono'));
             return;
         }
         try {
@@ -226,11 +232,11 @@ const Impostazioni = ({ onLogout }) => {
                 password_attuale: pwAttuale,
                 nuova_password: pwNuova,
             });
-            setPwMsg(res.data.message || 'Password aggiornata');
+            setPwMsg(t(res.data.message || 'Password aggiornata'));
             setPwOk(true);
             setPwAttuale(''); setPwNuova(''); setPwConferma('');
         } catch (err) {
-            setPwMsg(err.response?.data?.detail || 'Errore durante il cambio password');
+            setPwMsg(t(trd(err.response?.data?.detail) || 'Errore durante il cambio password'));
         }
     };
 
@@ -251,7 +257,7 @@ const Impostazioni = ({ onLogout }) => {
             },
         };
         setElimModal({ tipo, ...definizioni[tipo] });
-        setElimPw(''); setElimMsg('');
+        setElimPw(''); setElimMsg(''); setElimOk(false);
     };
 
     const chiudiModalElim = () => {
@@ -260,16 +266,16 @@ const Impostazioni = ({ onLogout }) => {
     };
 
     const confermaEliminazione = async () => {
-        if (!elimPw) { setElimMsg('Inserisci la password per confermare'); return; }
-        setElimBusy(true); setElimMsg('');
+        if (!elimPw) { setElimMsg(t('Inserisci la password per confermare')); return; }
+        setElimBusy(true); setElimMsg(''); setElimOk(false);
         try {
             const res = await api.post(`/api/eliminazione/${elimModal.tipo}`, { password: elimPw });
-            setElimMsg(res.data.message || 'Operazione completata');
+            setElimMsg(t(res.data.message || 'Operazione completata')); setElimOk(true);
             if (elimModal.tipo === 'utente' && onLogout) {
                 setTimeout(() => onLogout(), 1200);
             }
         } catch (err) {
-            setElimMsg(err.response?.data?.detail || 'Errore durante l\'eliminazione');
+            setElimMsg(t(trd(err.response?.data?.detail) || "Errore durante l'eliminazione"));
         } finally {
             setElimBusy(false);
         }
@@ -281,12 +287,12 @@ const Impostazioni = ({ onLogout }) => {
         setElimTransMode('tutto');
         setElimTransTipi([]); setElimTransCategorie([]); setElimTransPortafogli([]);
         setElimTransDal(''); setElimTransAl('');
-        setElimTransPw(''); setElimTransMsg('');
+        setElimTransPw(''); setElimTransMsg(''); setElimTransOk(false);
     };
 
     const confermaElimTrans = async () => {
-        if (!elimTransPw) { setElimTransMsg('Inserisci la password per confermare'); return; }
-        setElimTransBusy(true); setElimTransMsg('');
+        if (!elimTransPw) { setElimTransMsg(t('Inserisci la password per confermare')); return; }
+        setElimTransBusy(true); setElimTransMsg(''); setElimTransOk(false);
         try {
             const body = { password: elimTransPw, tutto: elimTransMode === 'tutto' };
             if (elimTransMode === 'filtra') {
@@ -297,9 +303,9 @@ const Impostazioni = ({ onLogout }) => {
                 body.al = elimTransAl || undefined;
             }
             const res = await api.post('/api/eliminazione/transazioni/filtrate', body);
-            setElimTransMsg(res.data.message || 'Operazione completata');
+            setElimTransMsg(t(res.data.message || 'Operazione completata')); setElimTransOk(true);
         } catch (err) {
-            setElimTransMsg(err.response?.data?.detail || 'Errore durante l\'eliminazione');
+            setElimTransMsg(t(trd(err.response?.data?.detail) || "Errore durante l'eliminazione"));
         } finally {
             setElimTransBusy(false);
         }
@@ -313,6 +319,7 @@ const Impostazioni = ({ onLogout }) => {
         ];
 
         const SEZIONI = [
+            { chiave: 'lingua', icona: '🌍', titolo: 'Lingua', sottotitolo: 'Cambia la lingua dell\'applicazione / Change app language' },
             { chiave: 'backup', icona: '💾', titolo: 'Backup e Ripristino', sottotitolo: 'Esporta il tuo archivio o importa un backup da file' },
             { chiave: 'password', icona: '🔑', titolo: 'Cambia Password', sottotitolo: 'Aggiorna la password del tuo account' },
             { chiave: 'eliminazione', icona: '🗑', titolo: 'Eliminazione Dati', sottotitolo: 'Azioni irreversibili, richiedono la password' },
@@ -320,7 +327,7 @@ const Impostazioni = ({ onLogout }) => {
 
         return (
             <div className="impostazioni-page">
-                <h2>Impostazioni</h2>
+                <h2>{t("Impostazioni")}</h2>
 
                 <div className="acc-container">
                     {SEZIONI.map(s => (
@@ -332,40 +339,57 @@ const Impostazioni = ({ onLogout }) => {
                                 aria-expanded={aperta === s.chiave}>
                                 <span className="acc-icon">{s.icona}</span>
                                 <span className="acc-testi">
-                                    <span className="acc-titolo">{s.titolo}</span>
-                                    <span className="acc-sottotitolo">{s.sottotitolo}</span>
+                                    <span className="acc-titolo">{t(s.titolo)}</span>
+                                    <span className="acc-sottotitolo">{t(s.sottotitolo)}</span>
                                 </span>
                                 <span className="acc-freccia">{aperta === s.chiave ? '▴' : '▾'}</span>
                             </button>
 
                             {aperta === s.chiave && (
                                 <div className="acc-body">
+                                    {s.chiave === 'lingua' && (
+                                        <>
+                                            <p className="impostazioni-desc">
+                                                {t('Seleziona la tua lingua preferita')}
+                                            </p>
+                                            <select 
+                                                value={i18n.resolvedLanguage} 
+                                                onChange={(e) => i18n.changeLanguage(e.target.value)}
+                                                className="categorie-input"
+                                                style={{ maxWidth: '300px', display: 'block', marginTop: '10px' }}
+                                            >
+                                                <option value="it">🇮🇹 Italiano</option>
+                                                <option value="en">🇬🇧 English</option>
+                                            </select>
+                                        </>
+                                    )}
+
                                     {s.chiave === 'backup' && (
                                         <>
                                             <p className="impostazioni-desc">
-                                                Esporta le tue transazioni in un file CSV (tutte o filtrate), o importa un backup da file XLSX/CSV.
+                                                {t('Esporta le tue transazioni in un file CSV (tutte o filtrate), o importa un backup da file XLSX/CSV.')}
                                             </p>
 
                                             <div className="backup-actions">
                                                 <div className="backup-card">
                                                     <span className="backup-icon">📤</span>
-                                                    <h4>Esporta dati</h4>
-                                                    <p>Scarica un file CSV con tutte le transazioni, oppure seleziona filtri (tipo, categorie, portafogli, periodo).</p>
+                                                    <h4>{t('Esporta dati')}</h4>
+                                                    <p>{t('Scarica un file CSV con tutte le transazioni, oppure seleziona filtri (tipo, categorie, portafogli, periodo).')}</p>
                                                     <button className="backup-btn backup-btn-export" onClick={apriExport}>
-                                                        Esporta CSV
+                                                        {t('Esporta CSV')}
                                                     </button>
                                                 </div>
 
                                                 <div className="backup-card">
                                                     <span className="backup-icon">📥</span>
-                                                    <h4>Importa backup</h4>
-                                                    <p>Carica un file XLSX o CSV. Verranno creati automaticamente portafogli, categorie e transazioni mancanti.</p>
+                                                    <h4>{t('Importa backup')}</h4>
+                                                    <p>{t('Carica un file XLSX o CSV. Verranno creati automaticamente portafogli, categorie e transazioni mancanti.')}</p>
                                                     <input type="file" ref={fileRef} onChange={handleImport}
                                                         accept=".xlsx,.xls,.csv" style={{ display: 'none' }} />
                                                     <button className="backup-btn backup-btn-import"
                                                         onClick={() => fileRef.current?.click()}
                                                         disabled={importing}>
-                                                        {importing ? 'Importazione in corso...' : 'Carica file'}
+                                                        {importing ? t('Importazione in corso...') : t('Carica file')}
                                                     </button>
                                                 </div>
                                             </div>
@@ -374,12 +398,12 @@ const Impostazioni = ({ onLogout }) => {
 
                                             {result && (
                                                 <div className="impostazioni-message success">
-                                                    <strong>Import completato!</strong>
+                                                    <strong>{t('Import completato!')}</strong>
                                                     <ul>
-                                                        <li>{result.portafogli_creati} portafogli creati</li>
-                                                        <li>{result.categorie_create} categorie create</li>
-                                                        <li>{result.transazioni_importate} transazioni importate</li>
-                                                        <li>{result.totale_righe} righe processate</li>
+                                                        <li>{result.portafogli_creati} {t('portafogli creati')}</li>
+                                                        <li>{result.categorie_create} {t('categorie create')}</li>
+                                                        <li>{result.transazioni_importate} {t('transazioni importate')}</li>
+                                                        <li>{result.totale_righe} {t('righe processate')}</li>
                                                     </ul>
                                                 </div>
                                             )}
@@ -389,16 +413,16 @@ const Impostazioni = ({ onLogout }) => {
                                     {s.chiave === 'password' && (
                                         <>
                                             <p className="impostazioni-desc">
-                                                Aggiorna la password del tuo account.
+                                                {t('Aggiorna la password del tuo account.')}
                                             </p>
                                             <form onSubmit={cambiaPassword} className="password-form">
-                                                <input type="password" placeholder="Password attuale"
+                                                <input type="password" placeholder={t("Password attuale")}
                                                     value={pwAttuale} onChange={e => setPwAttuale(e.target.value)} />
-                                                <input type="password" placeholder="Nuova password (min 8 caratteri)"
+                                                <input type="password" placeholder={t("Nuova password (min 8 caratteri)")}
                                                     value={pwNuova} onChange={e => setPwNuova(e.target.value)} />
-                                                <input type="password" placeholder="Conferma nuova password"
+                                                <input type="password" placeholder={t("Conferma nuova password")}
                                                     value={pwConferma} onChange={e => setPwConferma(e.target.value)} />
-                                                <button type="submit" className="backup-btn backup-btn-export">Aggiorna Password</button>
+                                                <button type="submit" className="backup-btn backup-btn-export">{t('Aggiorna Password')}</button>
                                             </form>
                                             {pwMsg && (
                                                 <div className={`impostazioni-message ${pwOk ? 'success' : 'error'}`}>{pwMsg}</div>
@@ -409,19 +433,19 @@ const Impostazioni = ({ onLogout }) => {
                                     {s.chiave === 'eliminazione' && (
                                         <>
                                             <p className="impostazioni-desc">
-                                                Azioni irreversibili. Per ciascuna operazione verrai invitato a confermare inserendo la tua password. Il portafoglio "Generale" non è mai eliminabile.
+                                                {t('Azioni irreversibili_desc')}
                                             </p>
 
                                             <div className="elim-actions">
                                                 {azioniEliminazione.map(a => (
                                                     <div key={a.tipo} className={`elim-card ${a.tipo === 'utente' ? 'elim-card-danger' : ''}`}>
                                                         <span className="elim-icon">{a.icona}</span>
-                                                        <h4>Elimina {a.titolo}</h4>
-                                                        <p>{a.descrizione}</p>
+                                                        <h4>{t('Elimina')} {t(a.titolo)}</h4>
+                                                        <p>{t(a.descrizione)}</p>
                                                         <button
                                                             className={`backup-btn elim-btn ${a.tipo === 'utente' ? 'elim-btn-danger' : ''}`}
                                                             onClick={() => a.tipo === 'transazioni' ? apriElimTrans() : apriModalElim(a.tipo)}>
-                                                            Elimina {a.titolo}
+                                                            {t('Elimina')} {t(a.titolo)}
                                                         </button>
                                                     </div>
                                                 ))}
@@ -438,21 +462,21 @@ const Impostazioni = ({ onLogout }) => {
             {elimModal && (
                 <div className="modal-overlay" onClick={chiudiModalElim}>
                     <div className="modal-content elim-modal" onClick={e => e.stopPropagation()}>
-                        <h3>{elimModal.titolo}</h3>
-                        <p className="elim-modal-desc">{elimModal.descrizione}</p>
+                        <h3>{elimModal.titolo ? t(elimModal.titolo) : ''}</h3>
+                        <p className="elim-modal-desc">{elimModal.descrizione ? t(elimModal.descrizione) : ''}</p>
                         <input
                             type="password"
                             className="elim-password-input"
-                            placeholder="Inserisci la password"
+                            placeholder={t("Inserisci la password")}
                             value={elimPw}
                             onChange={e => setElimPw(e.target.value)}
                             disabled={elimBusy}
                         />
-                        {elimMsg && <div className={`impostazioni-message ${elimMsg.includes('completata') || elimMsg === 'Operazione completata' ? 'success' : 'error'}`}>{elimMsg}</div>}
+                        {elimMsg && <div className={`impostazioni-message ${elimOk ? 'success' : 'error'}`}>{elimMsg}</div>}
                         <div className="modal-actions">
-                            <button className="modal-btn modal-btn-cancel" onClick={chiudiModalElim} disabled={elimBusy}>Annulla</button>
+                            <button className="modal-btn modal-btn-cancel" onClick={chiudiModalElim} disabled={elimBusy}>{t("Annulla")}</button>
                             <button className="modal-btn modal-btn-danger" onClick={confermaEliminazione} disabled={elimBusy}>
-                                {elimBusy ? 'Eliminazione...' : 'Conferma eliminazione'}
+                                {elimBusy ? t('Eliminazione...') : t('Conferma eliminazione')}
                             </button>
                         </div>
                     </div>
@@ -463,9 +487,9 @@ const Impostazioni = ({ onLogout }) => {
             {elimTransOpen && (
                 <div className="modal-overlay" onClick={() => !elimTransBusy && setElimTransOpen(false)}>
                     <div className="modal-content elim-modal elim-modal-wide" onClick={e => e.stopPropagation()}>
-                        <h3>Elimina transazioni</h3>
+                        <h3>{t('Elimina transazioni')}</h3>
                         <p className="elim-modal-desc">
-                            Scegli se eliminare tutte le transazioni o solo quelle che corrispondono ai filtri selezionati.
+                            {t('Scegli se eliminare tutte le transazioni o solo quelle che corrispondono ai filtri selezionati.')}
                         </p>
                         <FiltriTransazioni
                             mode={elimTransMode} setMode={setElimTransMode}
@@ -478,16 +502,16 @@ const Impostazioni = ({ onLogout }) => {
                         <input
                             type="password"
                             className="elim-password-input"
-                            placeholder="Inserisci la password per confermare"
+                            placeholder={t("Inserisci la password per confermare")}
                             value={elimTransPw}
                             onChange={e => setElimTransPw(e.target.value)}
                             disabled={elimTransBusy}
                         />
-                        {elimTransMsg && <div className={`impostazioni-message ${elimTransMsg.includes('eliminate') || elimTransMsg === 'Operazione completata' ? 'success' : 'error'}`}>{elimTransMsg}</div>}
+                        {elimTransMsg && <div className={`impostazioni-message ${elimTransOk ? 'success' : 'error'}`}>{elimTransMsg}</div>}
                         <div className="modal-actions">
-                            <button className="modal-btn modal-btn-cancel" onClick={() => setElimTransOpen(false)} disabled={elimTransBusy}>Annulla</button>
+                            <button className="modal-btn modal-btn-cancel" onClick={() => setElimTransOpen(false)} disabled={elimTransBusy}>{t("Annulla")}</button>
                             <button className="modal-btn modal-btn-danger" onClick={confermaElimTrans} disabled={elimTransBusy}>
-                                {elimTransBusy ? 'Eliminazione...' : 'Conferma eliminazione'}
+                                {elimTransBusy ? t('Eliminazione...') : t('Conferma eliminazione')}
                             </button>
                         </div>
                     </div>
@@ -498,9 +522,9 @@ const Impostazioni = ({ onLogout }) => {
             {exportOpen && (
                 <div className="modal-overlay" onClick={() => !exportBusy && setExportOpen(false)}>
                     <div className="modal-content elim-modal elim-modal-wide" onClick={e => e.stopPropagation()}>
-                        <h3>Esporta transazioni</h3>
+                        <h3>{t('Esporta transazioni')}</h3>
                         <p className="elim-modal-desc">
-                            Scegli se esportare tutte le transazioni o solo quelle che corrispondono ai filtri selezionati.
+                            {t('Scegli se esportare tutte le transazioni o solo quelle che corrispondono ai filtri selezionati.')}
                         </p>
                         <FiltriTransazioni
                             mode={exportMode} setMode={setExportMode}
@@ -511,9 +535,9 @@ const Impostazioni = ({ onLogout }) => {
                             al={exportAl} setAl={setExportAl}
                         />
                         <div className="modal-actions">
-                            <button className="modal-btn modal-btn-cancel" onClick={() => setExportOpen(false)} disabled={exportBusy}>Annulla</button>
+                            <button className="modal-btn modal-btn-cancel" onClick={() => setExportOpen(false)} disabled={exportBusy}>{t("Annulla")}</button>
                             <button className="modal-btn modal-btn-primary" onClick={eseguiExport} disabled={exportBusy}>
-                                {exportBusy ? 'Esportazione...' : 'Scarica CSV'}
+                                {exportBusy ? t('Esportazione...') : t('Scarica CSV')}
                             </button>
                         </div>
                     </div>

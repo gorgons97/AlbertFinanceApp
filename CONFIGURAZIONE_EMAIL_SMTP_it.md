@@ -1,3 +1,5 @@
+*🇬🇧 [Read the SMTP configuration guide in English](SMTP_EMAIL_CONFIGURATION.md)*
+
 # Guida Configurazione Servizio Email (SMTP) per Albert
 
 Questa guida descrive in dettaglio la procedura passo-passo per configurare l'invio delle email di sistema (recupero password, link di autenticazione e notifiche) tramite **GoTrue (Supabase Auth)**.

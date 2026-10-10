@@ -1,47 +1,32 @@
-# Albert — Gestore Spese Familiare
+# Albert — Family Expense Manager
 
-Applicazione web per la gestione delle spese familiari con supporto multi-utente
-e portafogli cointestati, completamente containerizzata con Docker.
+*🇮🇹 [Leggi la documentazione in Italiano](README_it.md)*
 
-## Avvio rapido
+A web application for family expense management with multi-user support and shared wallets, completely containerized with Docker.
 
-```bash
-# 1. Installare dipendenze frontend (solo prima volta)
-cd frontend && npm install && cd ..
+## Quick Start
 
-# 2. Avviare tutti i container
-docker compose up --build
+For instructions on how to start the application in **Light mode** (simple) or **Full mode** (production), check the **[Installation Guide](./INSTALLATION.md)**.
 
-# 3 Avviare la produzione con LetsEncript
-docker compose --env-file .env-vps -f docker-compose.prod.yml up --build
-```
+## Structure
 
-I servizi saranno disponibili su:
-- **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:8000
-- **Database**: localhost:5432
-
-## Struttura
-
-```
+```text
 Albert/
-├── docker-compose.yml        # Servizi: db, backend, frontend
-├── ARCHITECTURE.md           # Documentazione tecnica completa
-├── backend_python/           # API FastAPI (Python)
-├── frontend/                 # UI React
-└── docker/postgres/          # Schema DDL del database
+├── docker-compose.yml        # Services: db, backend, frontend
+├── ARCHITECTURE.md           # Complete technical documentation
+├── backend_python/           # FastAPI backend (Python)
+├── frontend/                 # React UI
+└── docker/postgres/          # Database DDL schema
 ```
 
-## Tecnologie
+## Technologies
 
 React 19 · FastAPI · PostgreSQL 15 · Docker · SQLAlchemy · JWT
 
-## Documentazione
+## Documentation
 
-Per dettagli su architettura, schema DB, API e bug noti, vedi [ARCHITECTURE.md](./ARCHITECTURE.md).
+For details on architecture, DB schema, API, and known bugs, see [ARCHITECTURE.md](./ARCHITECTURE.md).
 
-## Prima Registrazione
+## First Registration
 
-Dopo aver fatto la prima registrazione per poter caricare la prima transazione dovrete necessariamente aver creato dei portafogli e delle categorie, sennò non potrete caricare nessuna transazione
-
-
+After completing your first registration, you must create at least one wallet and category before you can add any transactions.
