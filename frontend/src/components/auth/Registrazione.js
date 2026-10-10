@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { trd } from '../../i18n';
 import api from '../../api';
 import supabase from '../../supabase';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import './Registrazione.css'; // Usa lo stesso CSS modificando i nomi delle classi
 
 
 const Registrazione = () => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
     // Stati per gestire i form data - AGGIORNATI con nuovi campi
     const [formData, setFormData] = useState({
         nome: '',
@@ -47,10 +50,10 @@ const Registrazione = () => {
     // Funzione per validazione nome
     const validateNome = (nome) => {
         if (!nome.trim()) {
-            return 'Nome è richiesto';
+            return t('Nome è richiesto');
         }
         if (nome.trim().length < 2) {
-            return 'Nome deve avere almeno 2 caratteri';
+            return t('Nome deve avere almeno 2 caratteri');
         }
         return '';
     };
@@ -59,10 +62,10 @@ const Registrazione = () => {
     // Funzione per validazione cognome
     const validateCognome = (cognome) => {
         if (!cognome.trim()) {
-            return 'Cognome è richiesto';
+            return t('Cognome è richiesto');
         }
         if (cognome.trim().length < 2) {
-            return 'Cognome deve avere almeno 2 caratteri';
+            return t('Cognome deve avere almeno 2 caratteri');
         }
         return '';
     };
@@ -72,10 +75,10 @@ const Registrazione = () => {
     const validateEmail = (email) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!email) {
-            return 'Email è richiesta';
+            return t('Email è richiesta');
         }
         if (!emailRegex.test(email)) {
-            return 'Inserisci un indirizzo email valido';
+            return t('Inserisci un indirizzo email valido');
         }
         return '';
     };
@@ -84,13 +87,13 @@ const Registrazione = () => {
     // Funzione per validazione password - PIÙ RIGOROSA per registrazione
     const validatePassword = (password) => {
         if (!password) {
-            return 'Password è richiesta';
+            return t('Password è richiesta');
         }
         if (password.length < 8) {
-            return 'La password deve avere almeno 8 caratteri';
+            return t('La password deve avere almeno 8 caratteri');
         }
         if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
-            return 'Password deve contenere maiuscola, minuscola e numero';
+            return t('Password deve contenere maiuscola, minuscola e numero');
         }
         return '';
     };
@@ -99,10 +102,10 @@ const Registrazione = () => {
     // Funzione per validazione conferma password
     const validateConfermaPassword = (password, confermaPassword) => {
         if (!confermaPassword) {
-            return 'Conferma password è richiesta';
+            return t('Conferma password è richiesta');
         }
         if (password !== confermaPassword) {
-            return 'Le password non coincidono';
+            return t('Le password non coincidono');
         }
         return '';
     };
@@ -254,7 +257,7 @@ const Registrazione = () => {
                     email: formData.email.trim(),
                     password: formData.password
                 });
-                setMessage(response.data.message || 'Registrazione completata con successo!');
+                setMessage(response.data.message || t('Registrazione completata con successo!'));
                 localStorage.setItem('access_token', response.data.access_token);
                 setTimeout(() => navigate('/dashboard'), 1500);
                 return;
@@ -264,10 +267,10 @@ const Registrazione = () => {
                 // Utente auto-confermato: salva token e inizializza profilo/portafoglio nel backend
                 localStorage.setItem('access_token', data.session.access_token);
                 await api.get('/api/auth/me').catch(() => {});
-                setMessage('Registrazione completata con successo!');
+                setMessage(t('Registrazione completata con successo!'));
                 setTimeout(() => navigate('/dashboard'), 1500);
             } else {
-                setMessage('Registrazione effettuata! Controlla la tua email per confermare l\'account.');
+                setMessage(t("Registrazione effettuata! Controlla la tua email per confermare l'account."));
             }
 
         } catch (error) {            
@@ -278,10 +281,10 @@ const Registrazione = () => {
                 } else if (typeof error.response.data.detail === 'object' && error.response.data.detail !== null) {
                     setMessage(error.response.data.detail.msg || JSON.stringify(error.response.data.detail));
                 } else {
-                    setMessage(error.response.data.detail);
+                    setMessage(trd(error.response.data.detail));
                 }
             } else {
-                setMessage(error.message || 'Errore durante la registrazione.');
+                setMessage(error.message || t('Errore durante la registrazione.'));
             }
         } finally {
             setIsLoading(false);
@@ -322,12 +325,14 @@ const Registrazione = () => {
             });
             if (error) throw error;
         } catch (error) {
-            setMessage(error.message || 'Errore durante la registrazione con Google');
+            setMessage(error.message || t('Errore durante la registrazione con Google'));
             setIsLoading(false);
         }
     };
 
     // Verifica se il form è valido - AGGIORNATA
+    const isSuccessMessage = message === t('Registrazione completata con successo!') || message === t("Registrazione effettuata! Controlla la tua email per confermare l'account.");
+
     const isFormValid = () => {
         return formData.nome && 
                formData.cognome &&
@@ -355,7 +360,7 @@ const Registrazione = () => {
                             </div>
                             <h1>Albert</h1>
                         </div>
-                        <p className="registrazione-subtitle">Crea il tuo account</p> {/* CAMBIATO testo */}
+                        <p className="registrazione-subtitle">{t('Crea il tuo account')}</p> {/* CAMBIATO testo */}
                     </div>
 
                     <button
@@ -370,11 +375,11 @@ const Registrazione = () => {
                             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
                             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
                         </svg>
-                        Registrati con Google
+                        {t('Registrati con Google')}
                     </button>
 
                     <div className="auth-divider">
-                        <span>oppure con email</span>
+                        <span>{t('oppure con email')}</span>
                     </div>
 
                     <form onSubmit={handleRegistrazione} className="registrazione-form" noValidate> {/* CAMBIATI nomi */}
@@ -382,7 +387,7 @@ const Registrazione = () => {
                         {/* CAMPO NOME - NUOVO */}
                         <div className="form-group">
                             <label htmlFor="nome" className="form-label">
-                                Nome
+                                {t('Nome')}
                             </label>
                             <div className="input-wrapper">
                                 <input
@@ -390,7 +395,7 @@ const Registrazione = () => {
                                     id="nome"
                                     name="nome"
                                     className={`form-control \${errors.nome ? 'error' : ''} \${touched.nome && !errors.nome && formData.nome ? 'success' : ''}`}
-                                    placeholder="Inserisci il tuo nome"
+                                    placeholder={t('Inserisci il tuo nome')}
                                     value={formData.nome}
                                     onChange={handleInputChange}
                                     onBlur={handleBlur}
@@ -415,7 +420,7 @@ const Registrazione = () => {
                         {/* CAMPO COGNOME - NUOVO */}
                         <div className="form-group">
                             <label htmlFor="cognome" className="form-label">
-                                Cognome
+                                {t('Cognome')}
                             </label>
                             <div className="input-wrapper">
                                 <input
@@ -423,7 +428,7 @@ const Registrazione = () => {
                                     id="cognome"
                                     name="cognome"
                                     className={`form-control \${errors.cognome ? 'error' : ''} \${touched.cognome && !errors.cognome && formData.cognome ? 'success' : ''}`}
-                                    placeholder="Inserisci il tuo cognome"
+                                    placeholder={t('Inserisci il tuo cognome')}
                                     value={formData.cognome}
                                     onChange={handleInputChange}
                                     onBlur={handleBlur}
@@ -449,7 +454,7 @@ const Registrazione = () => {
                         {/* CAMPO EMAIL - STESSO DEL LOGIN */}
                         <div className="form-group">
                             <label htmlFor="email" className="form-label">
-                                Email
+                                {t('Email')}
                             </label>
                             <div className="input-wrapper">
                                 <input
@@ -457,7 +462,7 @@ const Registrazione = () => {
                                     id="email"
                                     name="email"
                                     className={`form-control \${errors.email ? 'error' : ''} \${touched.email && !errors.email && formData.email ? 'success' : ''}`}
-                                    placeholder="Inserisci la tua email"
+                                    placeholder={t('Inserisci la tua email')}
                                     value={formData.email}
                                     onChange={handleInputChange}
                                     onBlur={handleBlur}
@@ -483,7 +488,7 @@ const Registrazione = () => {
                         {/* CAMPO PASSWORD - CON VALIDAZIONE PIÙ RIGOROSA */}
                         <div className="form-group">
                             <label htmlFor="password" className="form-label">
-                                Password
+                                {t('Password')}
                             </label>
                             <div className="input-wrapper">
                                 <input
@@ -491,7 +496,7 @@ const Registrazione = () => {
                                     id="password"
                                     name="password"
                                     className={`form-control \${errors.password ? 'error' : ''} \${touched.password && !errors.password && formData.password ? 'success' : ''}`}
-                                    placeholder="Crea una password sicura"
+                                    placeholder={t('Crea una password sicura')}
                                     value={formData.password}
                                     onChange={handleInputChange}
                                     onBlur={handleBlur}
@@ -501,7 +506,7 @@ const Registrazione = () => {
                                     type="button"
                                     className="password-toggle"
                                     onClick={togglePasswordVisibility}
-                                    aria-label={showPassword ? 'Nascondi password' : 'Mostra password'}
+                                    aria-label={showPassword ? t('Nascondi password') : t('Mostra password')}
                                 >
                                     {showPassword ? (
                                         <svg viewBox="0 0 24 24" fill="currentColor">
@@ -527,7 +532,7 @@ const Registrazione = () => {
                         {/* CAMPO CONFERMA PASSWORD - NUOVO */}
                         <div className="form-group">
                             <label htmlFor="confermaPassword" className="form-label">
-                                Conferma Password
+                                {t('Conferma Password')}
                             </label>
                             <div className="input-wrapper">
                                 <input
@@ -535,7 +540,7 @@ const Registrazione = () => {
                                     id="confermaPassword"
                                     name="confermaPassword"
                                     className={`form-control \${errors.confermaPassword ? 'error' : ''} \${touched.confermaPassword && !errors.confermaPassword && formData.confermaPassword ? 'success' : ''}`}
-                                    placeholder="Ripeti la password"
+                                    placeholder={t('Ripeti la password')}
                                     value={formData.confermaPassword}
                                     onChange={handleInputChange}
                                     onBlur={handleBlur}
@@ -545,7 +550,7 @@ const Registrazione = () => {
                                     type="button"
                                     className="password-toggle"
                                     onClick={toggleConfermaPasswordVisibility}
-                                    aria-label={showConfermaPassword ? 'Nascondi conferma password' : 'Mostra conferma password'}
+                                    aria-label={showConfermaPassword ? t('Nascondi conferma password') : t('Mostra conferma password')}
                                 >
                                     {showConfermaPassword ? (
                                         <svg viewBox="0 0 24 24" fill="currentColor">
@@ -578,18 +583,18 @@ const Registrazione = () => {
                             {isLoading ? (
                                 <>
                                     <div className="spinner"></div>
-                                    Registrazione in corso...
+                                    {t('Registrazione in corso...')}
                                 </>
                             ) : (
-                                'Registrati'
+                                t('Registrati')
                             )}
                         </button>
 
 
                         {message && (
-                            <div className={`message \${message.includes('successo') || message.includes('completata') ? 'success' : 'error'}`}>
+                            <div className={`message \${isSuccessMessage ? 'success' : 'error'}`}>
                                 <svg viewBox="0 0 24 24" fill="currentColor">
-                                    {message.includes('successo') || message.includes('completata') ? (
+                                    {isSuccessMessage ? (
                                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                                     ) : (
                                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
@@ -603,8 +608,8 @@ const Registrazione = () => {
 
                     <div className="registrazione-footer"> {/* CAMBIATO nome classe */}
                         <p>
-                            Hai già un account? 
-                            <Link to="/login">Accedi</Link> {/* LINK AL LOGIN */}
+                            {t('Hai già un account?')} 
+                            <Link to="/login">{t('Accedi')}</Link> {/* LINK AL LOGIN */}
                         </p>
                     </div>
                 </div>

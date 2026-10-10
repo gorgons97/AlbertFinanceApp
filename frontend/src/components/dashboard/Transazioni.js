@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { trd } from '../../i18n';
 import { useTranslation } from 'react-i18next';
 import api from '../../api';
 import ConfirmModal from './ConfirmModal';
@@ -132,7 +133,7 @@ const Transazioni = () => {
             setFormData(new Date().toISOString().split('T')[0]); 
             setSuccess(t('Transazione aggiunta!'));
             setTimeout(() => setSuccess(''), 2500);
-        } catch (err) { setError(err.response?.data?.detail || t("Errore")); }
+        } catch (err) { setError(trd(err.response?.data?.detail) || t("Errore")); }
     };
 
     const inviaTrasferimento = async (e) => {
@@ -156,7 +157,7 @@ const Transazioni = () => {
             setSuccess(t('Trasferimento creato!'));
             setTimeout(() => setSuccess(''), 2500);
             caricaTransazioni();
-        } catch (err) { setError(err.response?.data?.detail || t('Errore trasferimento')); }
+        } catch (err) { setError(trd(err.response?.data?.detail) || t('Errore trasferimento')); }
     };
 
     const iniziaModifica = (tr) => {
@@ -183,7 +184,7 @@ const Transazioni = () => {
             setEditingId(null);
             setSuccess(t('Transazione aggiornata!'));
             setTimeout(() => setSuccess(''), 2500);
-        } catch (err) { setError(err.response?.data?.detail || t('Errore modifica')); }
+        } catch (err) { setError(trd(err.response?.data?.detail) || t('Errore modifica')); }
     };
 
     const eseguiElimina = async () => {
@@ -194,7 +195,7 @@ const Transazioni = () => {
             setTransazioni(transazioni.filter(t => t.id_transazione !== deleteTarget.id_transazione));
             setSuccess(t('Transazione eliminata'));
             setTimeout(() => setSuccess(''), 2500);
-        } catch (err) { setError(err.response?.data?.detail || t('Errore')); }
+        } catch (err) { setError(trd(err.response?.data?.detail) || t('Errore')); }
         finally { setDeleteTarget(null); }
     };
 

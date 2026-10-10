@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { trd } from '../../i18n';
 import api from '../../api';
 import supabase from '../../supabase';
 import { Link, useNavigate } from 'react-router-dom';
@@ -37,10 +38,10 @@ const Login = () => {
     const validateEmail = (email) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!email) {
-            return 'Email è richiesta';
+            return t('Email è richiesta');
         }
         if (!emailRegex.test(email)) {
-            return 'Inserisci un indirizzo email valido';
+            return t('Inserisci un indirizzo email valido');
         }
         return '';
     };
@@ -48,7 +49,7 @@ const Login = () => {
     // Funzione per validazione password
     const validatePassword = (password) => {
         if (!password) {
-            return 'Password richiesta';
+            return t('Password è richiesta');
         }
         //if (password.length < 6) {
         //    return 'La password deve essere di almeno 6 caratteri';
@@ -142,7 +143,7 @@ const Login = () => {
             });
 
             if (!error && data?.session?.access_token) {
-                setMessage('Login effettuato con successo!');
+                setMessage(t('Login effettuato con successo!'));
                 localStorage.setItem('access_token', data.session.access_token);
                 // Sincronizza profilo/portafoglio con backend
                 await api.get('/api/auth/me').catch(() => {});
@@ -159,7 +160,7 @@ const Login = () => {
                 password: formData.password,
                 remember_me: rememberMe
             });
-            setMessage('Login effettuato con successo!');
+            setMessage(t('Login effettuato con successo!'));
             localStorage.setItem('access_token', response.data.access_token);
             if (rememberMe) {
                 localStorage.setItem('rememberEmail', formData.email);
@@ -167,7 +168,7 @@ const Login = () => {
             setTimeout(() => navigate('/dashboard'), 500);
 
         } catch (error) {
-            setMessage(error.response?.data?.detail || error.message || 'Errore durante il login');
+            setMessage(trd(error.response?.data?.detail) || error.message || t('Errore durante il login'));
         } finally {
             setIsLoading(false);
         }
@@ -213,7 +214,7 @@ const Login = () => {
             });
             if (error) throw error;
         } catch (error) {
-            setMessage(error.message || 'Errore durante l\'accesso con Google');
+            setMessage(error.message || t("Errore durante l'accesso con Google"));
             setIsLoading(false);
         }
     };
@@ -278,7 +279,7 @@ const Login = () => {
                                     id="email"
                                     name="email"
                                     className={`form-control ${errors.email ? 'error' : ''} ${touched.email && !errors.email && formData.email ? 'success' : ''}`}
-                                    placeholder="Inserisci la tua email"
+                                    placeholder={t('Inserisci la tua email')}
                                     value={formData.email}
                                     onChange={handleInputChange}
                                     onBlur={handleBlur}
@@ -320,7 +321,7 @@ const Login = () => {
                                     type="button"
                                     className="password-toggle"
                                     onClick={togglePasswordVisibility}
-                                    aria-label={showPassword ? 'Nascondi password' : 'Mostra password'}
+                                    aria-label={showPassword ? t('Nascondi password') : t('Mostra password')}
                                 >
                                     {showPassword ? (
                                         <svg viewBox="0 0 24 24" fill="currentColor">
@@ -366,7 +367,7 @@ const Login = () => {
                             {isLoading ? (
                                 <>
                                     <div className="spinner"></div>
-                                    Accesso in corso...
+                                    {t('Accesso in corso...')}
                                 </>
                             ) : (
                                 t('Accedi')
@@ -374,9 +375,9 @@ const Login = () => {
                         </button>
 
                         {message && (
-                            <div className={`message ${message.includes('successo') ? 'success' : 'error'}`}>
+                            <div className={`message ${message === t('Login effettuato con successo!') ? 'success' : 'error'}`}>
                                 <svg viewBox="0 0 24 24" fill="currentColor">
-                                    {message.includes('successo') ? (
+                                    {message === t('Login effettuato con successo!') ? (
                                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
                                     ) : (
                                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>

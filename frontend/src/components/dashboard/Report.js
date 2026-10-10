@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../../api';
+import { getLocale, trd } from '../../i18n';
 import './Report.css';
 
 // Palette colori per i grafici (riusabile per entrate/spese)
@@ -47,7 +48,7 @@ const Donut = ({ data, size = 180, thickness = 26 }) => {
                 ))}
             </svg>
             <div className="report-donut-center">
-                <span className="report-donut-total">{(tot).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
+                <span className="report-donut-total">{(tot).toLocaleString(getLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
             </div>
         </div>
     );
@@ -63,7 +64,7 @@ const Legend = ({ data }) => {
                     <span className="report-legend-dot" style={{ background: COLORS[i % COLORS.length] }} />
                     <span className="report-legend-name">{d.nome}</span>
                     <span className="report-legend-value">
-                        {d.importo.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                        {d.importo.toLocaleString(getLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                     </span>
                     <span className="report-legend-pct">{tot > 0 ? ((d.importo / tot) * 100).toFixed(1) : 0.0}%</span>
                 </li>
@@ -75,7 +76,7 @@ const Legend = ({ data }) => {
 /* ── Grafico a barre per mese (trend) ── */
 const BarChartMesi = ({ data }) => {
     const { t } = useTranslation();
-    if (!data.length) return <p className="report-empty">{t("Nessun dato")} per il periodo.</p>;
+    if (!data.length) return <p className="report-empty">{t("Nessun dato per il periodo.")}</p>;
     const max = Math.max(...data.map(d => Math.max(d.spese, d.entrate)), 1);
     return (
         <div className="report-bars">
@@ -83,16 +84,16 @@ const BarChartMesi = ({ data }) => {
                 <div key={i} className="report-bar-col">
                     <div className="report-bar-track">
                         <div className="report-bar report-bar-spese" style={{ height: `${(d.spese / max) * 100}%` }}
-                            title={`Spese ${d.spese.toLocaleString('it-IT')} €`} />
+                            title={`${t('Spese')} ${d.spese.toLocaleString(getLocale())} €`} />
                         <div className="report-bar report-bar-entrate" style={{ height: `${(d.entrate / max) * 100}%` }}
-                            title={`Entrate ${d.entrate.toLocaleString('it-IT')} €`} />
+                            title={`${t('Entrate')} ${d.entrate.toLocaleString(getLocale())} €`} />
                     </div>
                     <span className="report-bar-label">{d.mese.slice(5)}</span>
                 </div>
             ))}
             <div className="report-bars-legend">
-                <span><i className="report-legend-dot" style={{ background: '#ef4444' }} /> Spese</span>
-                <span><i className="report-legend-dot" style={{ background: '#10b981' }} /> Entrate</span>
+                <span><i className="report-legend-dot" style={{ background: '#ef4444' }} /> {t('Spese')}</span>
+                <span><i className="report-legend-dot" style={{ background: '#10b981' }} /> {t('Entrate')}</span>
             </div>
         </div>
     );
@@ -101,7 +102,7 @@ const BarChartMesi = ({ data }) => {
 /* ── Barre orizzontali per portafoglio ── */
 const BarChartPortafogli = ({ data }) => {
     const { t } = useTranslation();
-    if (!data.length) return <p className="report-empty">{t("Nessun dato")} per il periodo.</p>;
+    if (!data.length) return <p className="report-empty">{t("Nessun dato per il periodo.")}</p>;
     const max = Math.max(...data.map(d => Math.max(d.spese, d.entrate)), 1);
     return (
         <div className="report-hbars">
@@ -110,14 +111,14 @@ const BarChartPortafogli = ({ data }) => {
                     <span className="report-hbar-name">{d.nome}</span>
                     <div className="report-hbar-track">
                         <div className="report-hbar report-hbar-spese" style={{ width: `${(d.spese / max) * 100}%` }}
-                            title={`Spese ${d.spese.toLocaleString('it-IT')} €`} />
+                            title={`${t('Spese')} ${d.spese.toLocaleString(getLocale())} €`} />
                     </div>
-                    <span className="report-hbar-val spese">-{d.spese.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</span>
+                    <span className="report-hbar-val spese">-{d.spese.toLocaleString(getLocale(), { minimumFractionDigits: 2 })}</span>
                     <div className="report-hbar-track">
                         <div className="report-hbar report-hbar-entrate" style={{ width: `${(d.entrate / max) * 100}%` }}
-                            title={`Entrate ${d.entrate.toLocaleString('it-IT')} €`} />
+                            title={`${t('Entrate')} ${d.entrate.toLocaleString(getLocale())} €`} />
                     </div>
-                    <span className="report-hbar-val entrate">+{d.entrate.toLocaleString('it-IT', { minimumFractionDigits: 2 })}</span>
+                    <span className="report-hbar-val entrate">+{d.entrate.toLocaleString(getLocale(), { minimumFractionDigits: 2 })}</span>
                 </div>
             ))}
         </div>
@@ -166,7 +167,7 @@ const Report = () => {
             const res = await api.get('/api/transazioni/report', { params });
             setReport(res.data);
         } catch (err) {
-            setError(err.response?.data?.detail || 'Errore caricamento report');
+            setError(trd(err.response?.data?.detail) || t('Errore caricamento report'));
         } finally { setLoading(false); }
     }, [mese, dataInizio, dataFine, idPortafoglio, idCategoria]);
 
@@ -189,38 +190,38 @@ const Report = () => {
             {/* Filtri */}
             <div className="report-filtri">
                 <div className="report-filter-header">
-                    <span className="report-filter-title">🔍 Filtri</span>
-                    <button className="report-reset" onClick={reset} title="Azzera filtri">
+                    <span className="report-filter-title">🔍 {t('Filtri')}</span>
+                    <button className="report-reset" onClick={reset} title={t('Azzera filtri')}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
                             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
                         </svg>
-                        Azzera
+                        {t('Azzera')}
                     </button>
                 </div>
                 <div className="report-filter-grid">
                     <label className="report-filter">
-                        <span className="report-filter-label">Mese</span>
+                        <span className="report-filter-label">{t('Mese')}</span>
                         <input type="month" value={mese} onChange={e => {setMese(e.target.value); setDataInizio(''); setDataFine('');}} />
                     </label>
                     <label className="report-filter">
-                        <span className="report-filter-label">Portafoglio</span>
+                        <span className="report-filter-label">{t('Portafoglio')}</span>
                         <select value={idPortafoglio} onChange={e => setIdPortafoglio(e.target.value)}>
-                            <option value="">Tutti</option>
+                            <option value="">{t('Tutti')}</option>
                             {portafogli.map(p => <option key={p.id_portafoglio} value={p.id_portafoglio}>{p.nome}</option>)}
                         </select>
                     </label>
                     <label className="report-filter">
-                        <span className="report-filter-label">Dal</span>
+                        <span className="report-filter-label">{t('Dal')}</span>
                         <input type="date" value={dataInizio} onChange={e => {setDataInizio(e.target.value); setMese(''); }} />
                     </label>
                     <label className="report-filter">
-                        <span className="report-filter-label">Al</span>
+                        <span className="report-filter-label">{t('Al')}</span>
                         <input type="date" value={dataFine} onChange={e => {setDataFine(e.target.value); setMese(''); }} />
                     </label>
                     <label className="report-filter">
-                        <span className="report-filter-label">Categoria</span>
+                        <span className="report-filter-label">{t('Categoria')}</span>
                         <select value={idCategoria} onChange={e => setIdCategoria(e.target.value)}>
-                            <option value="">Tutte</option>
+                            <option value="">{t('Tutte')}</option>
                             {categorie.map(c => <option key={c.id_categoria} value={c.id_categoria}>{TIPI_ICONE[c.tipo] || ''} {c.nome}</option>)}
                         </select>
                     </label>
@@ -233,17 +234,17 @@ const Report = () => {
                     {/* Cards riassuntive */}
                     <div className="report-cards">
                         <div className="report-card">
-                            <span className="report-card-label">Spese</span>
-                            <span className="report-card-value expense">-{totali.spese.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
+                            <span className="report-card-label">{t('Spese')}</span>
+                            <span className="report-card-value expense">-{totali.spese.toLocaleString(getLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
                         </div>
                         <div className="report-card">
-                            <span className="report-card-label">Entrate</span>
-                            <span className="report-card-value income">+{totali.entrate.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
+                            <span className="report-card-label">{t('Entrate')}</span>
+                            <span className="report-card-value income">+{totali.entrate.toLocaleString(getLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
                         </div>
                         <div className="report-card">
                             <span className="report-card-label">{t("Saldo")}</span>
                             <span className={`report-card-value ${totali.saldo >= 0 ? 'income' : 'expense'}`}>
-                                {totali.saldo.toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                                {totali.saldo.toLocaleString(getLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                             </span>
                         </div>
                     </div>
@@ -251,12 +252,12 @@ const Report = () => {
                     {/* Grafici a torta: entrate e uscite per categoria */}
                     <div className="report-charts-row">
                         <div className="report-chart-card">
-                            <h3>💰 Entrate per categoria</h3>
+                            <h3>💰 {t('Entrate per categoria')}</h3>
                             <Donut data={entrate} />
                             <Legend data={entrate} />
                         </div>
                         <div className="report-chart-card">
-                            <h3>💸 Uscite per categoria</h3>
+                            <h3>💸 {t('Uscite per categoria')}</h3>
                             <Donut data={spese} />
                             <Legend data={spese} />
                         </div>
@@ -264,13 +265,13 @@ const Report = () => {
 
                     {/* Trend mensile */}
                     <div className="report-chart-card report-chart-full">
-                        <h3>📈 Andamento mensile (spese vs entrate)</h3>
+                        <h3>📈 {t('Andamento mensile (spese vs entrate)')}</h3>
                         <BarChartMesi data={report?.per_mese || []} />
                     </div>
 
                     {/* Per portafoglio */}
                     <div className="report-chart-card report-chart-full">
-                        <h3>👛 Spese ed entrate per portafoglio</h3>
+                        <h3>👛 {t('Spese ed entrate per portafoglio')}</h3>
                         <BarChartPortafogli data={report?.per_portafoglio || []} />
                     </div>
                 </>

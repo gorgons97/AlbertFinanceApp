@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { trd } from '../../i18n';
 import { useTranslation } from 'react-i18next';
 import api from '../../api';
 import ConfirmModal from './ConfirmModal';
@@ -77,7 +78,7 @@ const Portafogli = () => {
             setSuccess(`"${res.data.nome}" ${t('aggiunto!')}`);
             setTimeout(() => setSuccess(''), 2500);
         } catch (err) {
-            setError(err.response?.data?.detail || t("Errore durante l'aggiunta"));
+            setError(trd(err.response?.data?.detail) || t("Errore durante l'aggiunta"));
         }
     };
 
@@ -104,7 +105,7 @@ const Portafogli = () => {
             setSuccess(`"${res.data.nome}" ${t('aggiornato!')}`);
             setTimeout(() => setSuccess(''), 2500);
         } catch (err) {
-            setError(err.response?.data?.detail || t('Errore durante la modifica'));
+            setError(trd(err.response?.data?.detail) || t('Errore durante la modifica'));
         }
     };
 
@@ -119,7 +120,7 @@ const Portafogli = () => {
             setSuccess(`"${deleteTarget.nome}" ${t('rimosso')}`);
             setTimeout(() => setSuccess(''), 2500);
         } catch (err) {
-            setError(err.response?.data?.detail || t('Errore durante la rimozione'));
+            setError(trd(err.response?.data?.detail) || t('Errore durante la rimozione'));
         } finally {
             setDeleteTarget(null);
         }
@@ -147,7 +148,7 @@ const Portafogli = () => {
             setInviteEmail('');
             setTimeout(() => { setInviteTarget(null); setInviteMsg(''); }, 2500);
         } catch (err) {
-            setInviteMsg(err.response?.data?.detail || t("Errore durante l'invito"));
+            setInviteMsg(trd(err.response?.data?.detail) || t("Errore durante l'invito"));
         }
     };
 

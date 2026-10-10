@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import React, { useState, useRef, useEffect } from 'react';
+import { trd } from '../../i18n';
 import api from '../../api';
 import './Impostazioni.css';
 
@@ -124,6 +125,7 @@ const Impostazioni = ({ onLogout }) => {
     const [elimPw, setElimPw] = useState('');
     const [elimMsg, setElimMsg] = useState('');
     const [elimBusy, setElimBusy] = useState(false);
+    const [elimOk, setElimOk] = useState(false);
 
     // Eliminazione transazioni smart
     const [elimTransOpen, setElimTransOpen] = useState(false);
@@ -136,6 +138,7 @@ const Impostazioni = ({ onLogout }) => {
     const [elimTransPw, setElimTransPw] = useState('');
     const [elimTransMsg, setElimTransMsg] = useState('');
     const [elimTransBusy, setElimTransBusy] = useState(false);
+    const [elimTransOk, setElimTransOk] = useState(false);
 
     // Export smart
     const [exportOpen, setExportOpen] = useState(false);
@@ -168,7 +171,7 @@ const Impostazioni = ({ onLogout }) => {
             });
             setResult(res.data);
         } catch (err) {
-            setError(err.response?.data?.detail || 'Errore durante l\'import');
+            setError(trd(err.response?.data?.detail) || t("Errore durante l'import"));
         } finally {
             setImporting(false);
         }
@@ -203,7 +206,7 @@ const Impostazioni = ({ onLogout }) => {
             window.URL.revokeObjectURL(url);
             setExportOpen(false);
         } catch (err) {
-            setError('Errore durante l\'export');
+            setError(t("Errore durante l'export"));
         } finally {
             setExportBusy(false);
         }
@@ -213,15 +216,15 @@ const Impostazioni = ({ onLogout }) => {
         e.preventDefault();
         setPwMsg(''); setPwOk(false);
         if (!pwAttuale || !pwNuova || !pwConferma) {
-            setPwMsg('Compila tutti i campi');
+            setPwMsg(t('Compila tutti i campi'));
             return;
         }
         if (pwNuova.length < 8) {
-            setPwMsg('La nuova password deve avere almeno 8 caratteri');
+            setPwMsg(t('La nuova password deve avere almeno 8 caratteri'));
             return;
         }
         if (pwNuova !== pwConferma) {
-            setPwMsg('Le password non coincidono');
+            setPwMsg(t('Le password non coincidono'));
             return;
         }
         try {
@@ -229,11 +232,11 @@ const Impostazioni = ({ onLogout }) => {
                 password_attuale: pwAttuale,
                 nuova_password: pwNuova,
             });
-            setPwMsg(res.data.message || 'Password aggiornata');
+            setPwMsg(t(res.data.message || 'Password aggiornata'));
             setPwOk(true);
             setPwAttuale(''); setPwNuova(''); setPwConferma('');
         } catch (err) {
-            setPwMsg(err.response?.data?.detail || 'Errore durante il cambio password');
+            setPwMsg(t(trd(err.response?.data?.detail) || 'Errore durante il cambio password'));
         }
     };
 
@@ -254,7 +257,7 @@ const Impostazioni = ({ onLogout }) => {
             },
         };
         setElimModal({ tipo, ...definizioni[tipo] });
-        setElimPw(''); setElimMsg('');
+        setElimPw(''); setElimMsg(''); setElimOk(false);
     };
 
     const chiudiModalElim = () => {
@@ -263,16 +266,16 @@ const Impostazioni = ({ onLogout }) => {
     };
 
     const confermaEliminazione = async () => {
-        if (!elimPw) { setElimMsg('Inserisci la password per confermare'); return; }
-        setElimBusy(true); setElimMsg('');
+        if (!elimPw) { setElimMsg(t('Inserisci la password per confermare')); return; }
+        setElimBusy(true); setElimMsg(''); setElimOk(false);
         try {
             const res = await api.post(`/api/eliminazione/${elimModal.tipo}`, { password: elimPw });
-            setElimMsg(res.data.message || 'Operazione completata');
+            setElimMsg(t(res.data.message || 'Operazione completata')); setElimOk(true);
             if (elimModal.tipo === 'utente' && onLogout) {
                 setTimeout(() => onLogout(), 1200);
             }
         } catch (err) {
-            setElimMsg(err.response?.data?.detail || 'Errore durante l\'eliminazione');
+            setElimMsg(t(trd(err.response?.data?.detail) || "Errore durante l'eliminazione"));
         } finally {
             setElimBusy(false);
         }
@@ -284,12 +287,12 @@ const Impostazioni = ({ onLogout }) => {
         setElimTransMode('tutto');
         setElimTransTipi([]); setElimTransCategorie([]); setElimTransPortafogli([]);
         setElimTransDal(''); setElimTransAl('');
-        setElimTransPw(''); setElimTransMsg('');
+        setElimTransPw(''); setElimTransMsg(''); setElimTransOk(false);
     };
 
     const confermaElimTrans = async () => {
-        if (!elimTransPw) { setElimTransMsg('Inserisci la password per confermare'); return; }
-        setElimTransBusy(true); setElimTransMsg('');
+        if (!elimTransPw) { setElimTransMsg(t('Inserisci la password per confermare')); return; }
+        setElimTransBusy(true); setElimTransMsg(''); setElimTransOk(false);
         try {
             const body = { password: elimTransPw, tutto: elimTransMode === 'tutto' };
             if (elimTransMode === 'filtra') {
@@ -300,9 +303,9 @@ const Impostazioni = ({ onLogout }) => {
                 body.al = elimTransAl || undefined;
             }
             const res = await api.post('/api/eliminazione/transazioni/filtrate', body);
-            setElimTransMsg(res.data.message || 'Operazione completata');
+            setElimTransMsg(t(res.data.message || 'Operazione completata')); setElimTransOk(true);
         } catch (err) {
-            setElimTransMsg(err.response?.data?.detail || 'Errore durante l\'eliminazione');
+            setElimTransMsg(t(trd(err.response?.data?.detail) || "Errore durante l'eliminazione"));
         } finally {
             setElimTransBusy(false);
         }
@@ -336,8 +339,8 @@ const Impostazioni = ({ onLogout }) => {
                                 aria-expanded={aperta === s.chiave}>
                                 <span className="acc-icon">{s.icona}</span>
                                 <span className="acc-testi">
-                                    <span className="acc-titolo">{s.titolo}</span>
-                                    <span className="acc-sottotitolo">{s.sottotitolo}</span>
+                                    <span className="acc-titolo">{t(s.titolo)}</span>
+                                    <span className="acc-sottotitolo">{t(s.sottotitolo)}</span>
                                 </span>
                                 <span className="acc-freccia">{aperta === s.chiave ? '▴' : '▾'}</span>
                             </button>
@@ -350,7 +353,7 @@ const Impostazioni = ({ onLogout }) => {
                                                 {t('Seleziona la tua lingua preferita')}
                                             </p>
                                             <select 
-                                                value={i18n.language} 
+                                                value={i18n.resolvedLanguage} 
                                                 onChange={(e) => i18n.changeLanguage(e.target.value)}
                                                 className="categorie-input"
                                                 style={{ maxWidth: '300px', display: 'block', marginTop: '10px' }}
@@ -386,7 +389,7 @@ const Impostazioni = ({ onLogout }) => {
                                                     <button className="backup-btn backup-btn-import"
                                                         onClick={() => fileRef.current?.click()}
                                                         disabled={importing}>
-                                                        {importing ? 'Importazione in corso...' : 'Carica file'}
+                                                        {importing ? t('Importazione in corso...') : t('Carica file')}
                                                     </button>
                                                 </div>
                                             </div>
@@ -410,7 +413,7 @@ const Impostazioni = ({ onLogout }) => {
                                     {s.chiave === 'password' && (
                                         <>
                                             <p className="impostazioni-desc">
-                                                Aggiorna la password del tuo account.
+                                                {t('Aggiorna la password del tuo account.')}
                                             </p>
                                             <form onSubmit={cambiaPassword} className="password-form">
                                                 <input type="password" placeholder={t("Password attuale")}
@@ -419,7 +422,7 @@ const Impostazioni = ({ onLogout }) => {
                                                     value={pwNuova} onChange={e => setPwNuova(e.target.value)} />
                                                 <input type="password" placeholder={t("Conferma nuova password")}
                                                     value={pwConferma} onChange={e => setPwConferma(e.target.value)} />
-                                                <button type="submit" className="backup-btn backup-btn-export">Aggiorna Password</button>
+                                                <button type="submit" className="backup-btn backup-btn-export">{t('Aggiorna Password')}</button>
                                             </form>
                                             {pwMsg && (
                                                 <div className={`impostazioni-message ${pwOk ? 'success' : 'error'}`}>{pwMsg}</div>
@@ -469,7 +472,7 @@ const Impostazioni = ({ onLogout }) => {
                             onChange={e => setElimPw(e.target.value)}
                             disabled={elimBusy}
                         />
-                        {elimMsg && <div className={`impostazioni-message ${elimMsg.includes('completata') || elimMsg === 'Operazione completata' ? 'success' : 'error'}`}>{elimMsg}</div>}
+                        {elimMsg && <div className={`impostazioni-message ${elimOk ? 'success' : 'error'}`}>{elimMsg}</div>}
                         <div className="modal-actions">
                             <button className="modal-btn modal-btn-cancel" onClick={chiudiModalElim} disabled={elimBusy}>{t("Annulla")}</button>
                             <button className="modal-btn modal-btn-danger" onClick={confermaEliminazione} disabled={elimBusy}>
@@ -504,7 +507,7 @@ const Impostazioni = ({ onLogout }) => {
                             onChange={e => setElimTransPw(e.target.value)}
                             disabled={elimTransBusy}
                         />
-                        {elimTransMsg && <div className={`impostazioni-message ${elimTransMsg.includes('eliminate') || elimTransMsg === 'Operazione completata' ? 'success' : 'error'}`}>{elimTransMsg}</div>}
+                        {elimTransMsg && <div className={`impostazioni-message ${elimTransOk ? 'success' : 'error'}`}>{elimTransMsg}</div>}
                         <div className="modal-actions">
                             <button className="modal-btn modal-btn-cancel" onClick={() => setElimTransOpen(false)} disabled={elimTransBusy}>{t("Annulla")}</button>
                             <button className="modal-btn modal-btn-danger" onClick={confermaElimTrans} disabled={elimTransBusy}>

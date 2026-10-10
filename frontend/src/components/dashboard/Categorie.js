@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { trd } from '../../i18n';
 import { useTranslation } from 'react-i18next';
 import api from '../../api';
 import ConfirmModal from './ConfirmModal';
@@ -50,7 +51,7 @@ const Categorie = () => {
             setSuccess(`"${res.data.nome}" ${t('aggiunta!')}`);
             setTimeout(() => setSuccess(''), 2500);
         } catch (err) {
-            setError(err.response?.data?.detail || t("Errore durante l'aggiunta"));
+            setError(trd(err.response?.data?.detail) || t("Errore durante l'aggiunta"));
         }
     };
 
@@ -72,7 +73,7 @@ const Categorie = () => {
             setSuccess(`"${res.data.nome}" ${t('aggiornata!')}`);
             setTimeout(() => setSuccess(''), 2500);
         } catch (err) {
-            setError(err.response?.data?.detail || t('Errore durante la modifica'));
+            setError(trd(err.response?.data?.detail) || t('Errore durante la modifica'));
         }
     };
 
@@ -87,7 +88,7 @@ const Categorie = () => {
             setSuccess(`"${deleteTarget.nome}" ${t('rimossa')}`);
             setTimeout(() => setSuccess(''), 2500);
         } catch (err) {
-            setError(err.response?.data?.detail || t('Errore durante la rimozione'));
+            setError(trd(err.response?.data?.detail) || t('Errore durante la rimozione'));
         } finally {
             setDeleteTarget(null);
         }

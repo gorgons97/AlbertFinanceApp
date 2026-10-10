@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { trd, getLocale } from '../../i18n';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import api from '../../api';
@@ -187,7 +188,7 @@ const Dashboard = () => {
                         <h2>{t(PAGE_TITLES[activePage] || 'Dashboard')}</h2>
                     </div>
                     <span className="dashboard-month">
-                        {new Date().toLocaleString('it-IT', { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase())}
+                        {new Date().toLocaleString(getLocale(), { month: 'long', year: 'numeric' }).replace(/^\w/, c => c.toUpperCase())}
                     </span>
                     <button className="notif-bell" onClick={() => setActivePage('notifiche')} title={t('Notifiche')}>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -271,7 +272,7 @@ const QuickAddFAB = () => {
                 chiudi();
                 window.location.reload();
             } catch (err) {
-                setMsg(err.response?.data?.detail || t('Errore durante il trasferimento'));
+                setMsg(trd(err.response?.data?.detail) || t('Errore durante il trasferimento'));
             }
             return;
         }
@@ -290,7 +291,7 @@ const QuickAddFAB = () => {
             chiudi();
             window.location.reload();
         } catch (err) {
-            setMsg(err.response?.data?.detail || t('Errore'));
+            setMsg(trd(err.response?.data?.detail) || t('Errore'));
         }
     };
 
@@ -428,7 +429,7 @@ const DashboardHome = () => {
             {transazioni.length === 0 ? (
                 <div className="dashboard-placeholder">
                     <div className="placeholder-icon">📊</div>
-                    <p>{t('Nessuna transazione a')} {new Date().toLocaleString('it-IT', { month: 'long' }).replace(/^\w/, c => c.toUpperCase())}.</p>
+                    <p>{t('Nessuna transazione a')} {new Date().toLocaleString(getLocale(), { month: 'long' }).replace(/^\w/, c => c.toUpperCase())}.</p>
                     <p className="placeholder-hint">{t('Usa il pulsante')} <strong>+</strong> {t('per aggiungerne una.')}</p>
                 </div>
             ) : (
@@ -436,7 +437,7 @@ const DashboardHome = () => {
                     {sortedDates.map(date => {
                         const items = grouped[date];
                         const dateObj = new Date(date + 'T00:00:00');
-                        const formattedDate = dateObj.toLocaleDateString('it-IT', {
+                        const formattedDate = dateObj.toLocaleDateString(getLocale(), {
                             weekday: 'long',
                             day: 'numeric',
                             month: 'long',
